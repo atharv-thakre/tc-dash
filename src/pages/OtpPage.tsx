@@ -11,6 +11,7 @@ import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { formatDate, maskSecret } from '../lib/utils';
+import { getErrorMessage } from '../services/apiClient';
 
 export const OtpPage: React.FC = () => {
   const [records, setRecords] = useState<OTPRecord[]>([]);
@@ -37,7 +38,7 @@ export const OtpPage: React.FC = () => {
       const data = await otpService.listRecords();
       setRecords(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch OTP records');
+      setError(getErrorMessage(err, 'Failed to fetch OTP records'));
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +65,7 @@ export const OtpPage: React.FC = () => {
       toast.success('OTP code generated successfully');
       fetchRecords();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to generate OTP');
+      toast.error(getErrorMessage(err, 'Failed to generate OTP'));
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +83,7 @@ export const OtpPage: React.FC = () => {
       setRevokingItem(null);
       fetchRecords();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to revoke OTP');
+      toast.error(getErrorMessage(err, 'Failed to revoke OTP'));
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +96,7 @@ export const OtpPage: React.FC = () => {
       toast.success(`Cleaned up ${res?.count ?? 0} expired OTP records`);
       fetchRecords();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to cleanup expired records');
+      toast.error(getErrorMessage(err, 'Failed to cleanup expired records'));
     } finally {
       setIsSubmitting(false);
     }
@@ -109,17 +110,18 @@ export const OtpPage: React.FC = () => {
       setIsClearAllOpen(false);
       fetchRecords();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to clear OTP records');
+      toast.error(getErrorMessage(err, 'Failed to clear OTP records'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filtered = records.filter(
+  const safeRecords = Array.isArray(records) ? records : [];
+  const filtered = safeRecords.filter(
     (r) =>
-      r.identifier.toLowerCase().includes(search.toLowerCase()) ||
-      r.purpose.toLowerCase().includes(search.toLowerCase()) ||
-      r.id.toLowerCase().includes(search.toLowerCase())
+      String(r.identifier ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(r.purpose ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(r.id ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [

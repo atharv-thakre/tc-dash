@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/auth';
 import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
+import { getErrorMessage } from '../services/apiClient';
 
 const passwordSchema = z.object({
   identifier: z.string().min(1, 'Email or handle is required'),
@@ -40,7 +41,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       toast.success('Signed in successfully');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to sign in. Please check credentials.');
+      toast.error(getErrorMessage(err, 'Failed to sign in. Please check credentials.'));
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +59,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       setOtpSent(true);
       toast.success('OTP sent to email. Code expires soon.');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send OTP code.');
+      toast.error(getErrorMessage(err, 'Failed to send OTP code.'));
     } finally {
       setIsSendingOtp(false);
     }
@@ -76,7 +77,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       toast.success('Signed in with OTP successfully');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Invalid or expired OTP code.');
+      toast.error(getErrorMessage(err, 'Invalid or expired OTP code.'));
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +148,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="admin@tcauth.dev or superadmin"
+                  placeholder="atharv or admin@tcauth.dev"
                   {...registerPassword('identifier')}
                   className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50"
                 />
@@ -165,6 +166,31 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 />
               </div>
             </FormField>
+
+            <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 text-xs text-gray-600 dark:text-gray-300">
+              <div className="font-semibold text-[11px] uppercase tracking-wider text-gray-400 mb-1">
+                Quick Fill Test Account:
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idInput = document.querySelector('input[name="identifier"]') as HTMLInputElement;
+                    const passInput = document.querySelector('input[name="password"]') as HTMLInputElement;
+                    if (idInput && passInput) {
+                      idInput.value = 'atharv';
+                      passInput.value = 'atharv@112';
+                      idInput.dispatchEvent(new Event('input', { bubbles: true }));
+                      passInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-mono text-[11px] font-semibold transition-colors flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  atharv / atharv@112
+                </button>
+              </div>
+            </div>
 
             <button
               type="submit"

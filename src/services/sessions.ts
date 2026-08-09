@@ -1,5 +1,5 @@
 import { SessionRecord } from '../types';
-import { apiClient, getStoredApiMode } from './apiClient';
+import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
 import { INITIAL_SESSIONS } from './mockData';
 
 const DEMO_SESSIONS_KEY = 'tc_auth_demo_sessions';
@@ -28,34 +28,56 @@ export const sessionsService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return getDemoSessions();
     }
-    const res = await apiClient.get<SessionRecord[]>('/session/');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', [
+      '/session/',
+      '/session',
+      '/sessions/',
+      '/sessions',
+      '/session/list',
+    ]);
+    return normalizeArrayResponse<SessionRecord>(resData);
   },
 
   // DELETE /session/
-  async deleteSession(session_id: string): Promise<null> {
+  async deleteSession(session_id: string | number): Promise<null> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
       let sessions = getDemoSessions();
-      sessions = sessions.filter((s) => s.id !== session_id);
+      sessions = sessions.filter((s) => String(s.id) !== String(session_id));
       saveDemoSessions(sessions);
       return null;
     }
-    const res = await apiClient.delete('/session/', { data: { session_id } });
-    return res.data;
+
+    const idStr = String(session_id);
+    const parsedId = /^\d+$/.test(idStr) ? Number(idStr) : session_id;
+
+    await requestWithFallback<any>(
+      'delete',
+      ['/session/', '/session', '/sessions/'],
+      { session_id: parsedId }
+    );
+    return null;
   },
 
   // DELETE /session/all
-  async deleteAllForAccount(account_id: string): Promise<null> {
+  async deleteAllForAccount(account_id: string | number): Promise<null> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
       let sessions = getDemoSessions();
-      sessions = sessions.filter((s) => s.account_id !== account_id);
+      sessions = sessions.filter((s) => String(s.account_id) !== String(account_id));
       saveDemoSessions(sessions);
       return null;
     }
-    const res = await apiClient.delete('/session/all', { data: { account_id } });
-    return res.data;
+
+    const accStr = String(account_id);
+    const parsedId = /^\d+$/.test(accStr) ? Number(accStr) : account_id;
+
+    await requestWithFallback<any>(
+      'delete',
+      ['/session/all', '/session/all/', '/sessions/all'],
+      { account_id: parsedId }
+    );
+    return null;
   },
 
   // DELETE /session/cleanup
@@ -68,8 +90,8 @@ export const sessionsService = {
       saveDemoSessions(sessions);
       return null;
     }
-    const res = await apiClient.delete('/session/cleanup');
-    return res.data;
+    await requestWithFallback<any>('delete', ['/session/cleanup', '/sessions/cleanup', '/session/cleanup/']);
+    return null;
   },
 
   // DELETE /session/clear
@@ -79,7 +101,8 @@ export const sessionsService = {
       saveDemoSessions([]);
       return null;
     }
-    const res = await apiClient.delete('/session/clear');
-    return res.data;
+    await requestWithFallback<any>('delete', ['/session/clear', '/sessions/clear', '/session/clear/']);
+    return null;
   },
 };
+

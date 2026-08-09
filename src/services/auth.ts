@@ -8,7 +8,7 @@ import {
   SignupOTPInput,
   SignupPasswordInput,
 } from '../types';
-import { apiClient, getCustomBaseUrl, getStoredApiMode, LOCAL_STORAGE_TOKEN_KEY } from './apiClient';
+import { apiClient, getCustomBaseUrl, getStoredApiMode, LOCAL_STORAGE_TOKEN_KEY, requestWithFallback } from './apiClient';
 import { INITIAL_ACCOUNTS } from './mockData';
 
 // Local storage key for demo accounts
@@ -31,6 +31,31 @@ export function saveDemoAccounts(accounts: any[]) {
   localStorage.setItem(DEMO_ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
+function extractAuthResponse(resData: any): AuthResponse {
+  const payload = resData?.data || resData || {};
+  const access_token = payload.access_token || payload.token || payload.accessToken || payload.jwt || '';
+  const token_type = payload.token_type || payload.tokenType || 'Bearer';
+  const account = payload.account || payload.user || payload.account_data || payload.data?.account || payload.data?.user || null;
+
+  return {
+    access_token,
+    token_type,
+    account: account || {
+      id: payload.id || 'acc_unknown',
+      uid: payload.uid || 'uid_unknown',
+      name: payload.name || 'User',
+      handle: payload.handle || 'user',
+      email: payload.email || '',
+      phone: payload.phone || null,
+      avatar_url: payload.avatar_url || null,
+      role: payload.role || 'user',
+      status: payload.status || 'active',
+      created_at: payload.created_at || new Date().toISOString(),
+      updated_at: payload.updated_at || new Date().toISOString(),
+    },
+  };
+}
+
 export const authService = {
   // POST /send/email/otp/{purpose}
   async sendEmailOTP(purpose: OTPPurpose, input: SendEmailOTPInput): Promise<SendEmailOTPResponse> {
@@ -39,8 +64,12 @@ export const authService = {
       const expires_at = new Date(Date.now() + 1000 * 60 * 10).toISOString();
       return { expires_at };
     }
-    const res = await apiClient.post<SendEmailOTPResponse>(`/send/email/otp/${purpose}`, input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', [
+      `/send/email/otp/${purpose}`,
+      `/send/email/otp/${purpose}/`,
+      `/otp/send/${purpose}`,
+    ], input);
+    return resData?.data || resData;
   },
 
   // POST /signup/otp
@@ -72,11 +101,12 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const res = await apiClient.post<AuthResponse>('/signup/otp', input);
-    if (res.data.access_token) {
-      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, res.data.access_token);
+    const resData = await requestWithFallback<any>('post', ['/signup/otp', '/signup/otp/', '/auth/signup/otp'], input);
+    const authRes = extractAuthResponse(resData);
+    if (authRes.access_token) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
     }
-    return res.data;
+    return authRes;
   },
 
   // POST /signup/password
@@ -115,11 +145,12 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const res = await apiClient.post<AuthResponse>('/signup/password', input);
-    if (res.data.access_token) {
-      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, res.data.access_token);
+    const resData = await requestWithFallback<any>('post', ['/signup/password', '/signup/password/', '/auth/signup/password'], input);
+    const authRes = extractAuthResponse(resData);
+    if (authRes.access_token) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
     }
-    return res.data;
+    return authRes;
   },
 
   // POST /login/otp
@@ -129,7 +160,6 @@ export const authService = {
       const accounts = getDemoAccounts();
       let acc = accounts.find((a: any) => a.email.toLowerCase() === input.email.toLowerCase());
       if (!acc) {
-        // Create demo account if logging in with new email via demo OTP
         acc = {
           id: `acc_${Date.now()}`,
           uid: `uid_${Date.now()}`,
@@ -155,11 +185,12 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const res = await apiClient.post<AuthResponse>('/login/otp', input);
-    if (res.data.access_token) {
-      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, res.data.access_token);
+    const resData = await requestWithFallback<any>('post', ['/login/otp', '/login/otp/', '/auth/login/otp'], input);
+    const authRes = extractAuthResponse(resData);
+    if (authRes.access_token) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
     }
-    return res.data;
+    return authRes;
   },
 
   // POST /login/password
@@ -186,11 +217,19 @@ export const authService = {
       return response;
     }
 
-    const res = await apiClient.post<AuthResponse>('/login/password', input);
-    if (res.data.access_token) {
-      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, res.data.access_token);
+    const resData = await requestWithFallback<any>('post', [
+      '/login/password',
+      '/login/password/',
+      '/auth/login/password',
+      '/login',
+      '/login/',
+    ], input);
+
+    const authRes = extractAuthResponse(resData);
+    if (authRes.access_token) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
     }
-    return res.data;
+    return authRes;
   },
 
   getOAuthLoginUrl(provider: 'google' | 'github'): string {

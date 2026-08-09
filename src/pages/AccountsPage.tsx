@@ -15,6 +15,8 @@ import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { formatDate } from '../lib/utils';
 
+import { getErrorMessage } from '../services/apiClient';
+
 const accountSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Valid email required'),
@@ -47,7 +49,7 @@ export const AccountsPage: React.FC = () => {
       const data = await accountsService.listAccounts();
       setAccounts(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch accounts');
+      setError(getErrorMessage(err, 'Failed to fetch accounts'));
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +137,7 @@ export const AccountsPage: React.FC = () => {
       setIsCreateOpen(false);
       fetchAccounts();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save account');
+      toast.error(getErrorMessage(err, 'Failed to save account'));
     } finally {
       setIsSubmitting(false);
     }
@@ -150,19 +152,20 @@ export const AccountsPage: React.FC = () => {
       setDeletingAccountId(null);
       fetchAccounts();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete account');
+      toast.error(getErrorMessage(err, 'Failed to delete account'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // Filter accounts
-  const filtered = accounts.filter(
+  const safeAccounts = Array.isArray(accounts) ? accounts : [];
+  const filtered = safeAccounts.filter(
     (a) =>
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.email.toLowerCase().includes(search.toLowerCase()) ||
-      a.handle.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.toLowerCase().includes(search.toLowerCase())
+      String(a.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(a.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(a.handle ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(a.id ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [

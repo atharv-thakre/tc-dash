@@ -1,5 +1,5 @@
 import { MeResponse, UpdatePasswordInput } from '../types';
-import { apiClient, getStoredApiMode, LOCAL_STORAGE_TOKEN_KEY } from './apiClient';
+import { apiClient, getStoredApiMode, LOCAL_STORAGE_TOKEN_KEY, requestWithFallback } from './apiClient';
 import { getDemoAccounts } from './auth';
 
 export const profileService = {
@@ -35,8 +35,31 @@ export const profileService = {
       };
     }
 
-    const res = await apiClient.get<MeResponse>('/me');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', ['/me', '/me/', '/auth/me', '/user/me']);
+    const payload = resData?.data || resData || {};
+
+    if (payload.account) {
+      return payload as MeResponse;
+    }
+
+    // If payload is the account directly
+    return {
+      account: {
+        id: payload.id || 'acc_me',
+        uid: payload.uid || 'uid_me',
+        name: payload.name || 'User',
+        handle: payload.handle || 'user',
+        email: payload.email || '',
+        phone: payload.phone || null,
+        avatar_url: payload.avatar_url || null,
+        role: payload.role || 'user',
+        status: payload.status || 'active',
+        created_at: payload.created_at || new Date().toISOString(),
+        updated_at: payload.updated_at || new Date().toISOString(),
+      },
+      session: payload.session || null,
+      payload: payload.payload || null,
+    };
   },
 
   // POST /logout
@@ -48,7 +71,7 @@ export const profileService = {
     }
 
     try {
-      await apiClient.post('/logout');
+      await requestWithFallback<any>('post', ['/logout', '/logout/', '/auth/logout']);
     } finally {
       localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
     }
@@ -64,7 +87,7 @@ export const profileService = {
     }
 
     try {
-      await apiClient.post('/logout-all');
+      await requestWithFallback<any>('post', ['/logout-all', '/logout-all/', '/auth/logout-all', '/logout/all']);
     } finally {
       localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
     }
@@ -78,7 +101,12 @@ export const profileService = {
       return null;
     }
 
-    const res = await apiClient.put('/update/password', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('put', [
+      '/update/password',
+      '/update/password/',
+      '/password/update',
+      '/account/password',
+    ], input);
+    return resData?.data || resData;
   },
 };

@@ -11,6 +11,7 @@ import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { formatDate } from '../lib/utils';
+import { getErrorMessage } from '../services/apiClient';
 
 export const OAuthLinksPage: React.FC = () => {
   const [links, setLinks] = useState<OAuthLink[]>([]);
@@ -35,7 +36,7 @@ export const OAuthLinksPage: React.FC = () => {
       const data = await oauthLinksService.listLinks();
       setLinks(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch OAuth provider links');
+      setError(getErrorMessage(err, 'Failed to fetch OAuth provider links'));
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +66,7 @@ export const OAuthLinksPage: React.FC = () => {
       setProviderUserId('');
       fetchLinks();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to link provider');
+      toast.error(getErrorMessage(err, 'Failed to link provider'));
     } finally {
       setIsSubmitting(false);
     }
@@ -83,17 +84,18 @@ export const OAuthLinksPage: React.FC = () => {
       setUnlinkingItem(null);
       fetchLinks();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to unlink provider');
+      toast.error(getErrorMessage(err, 'Failed to unlink provider'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filtered = links.filter(
+  const safeLinks = Array.isArray(links) ? links : [];
+  const filtered = safeLinks.filter(
     (l) =>
-      l.account_id.toLowerCase().includes(search.toLowerCase()) ||
-      l.provider.toLowerCase().includes(search.toLowerCase()) ||
-      l.provider_user_id.toLowerCase().includes(search.toLowerCase())
+      String(l.account_id ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(l.provider ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(l.provider_user_id ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [
@@ -110,7 +112,7 @@ export const OAuthLinksPage: React.FC = () => {
       sortable: true,
       accessorKey: 'provider' as const,
       cell: (item: OAuthLink) => {
-        const isGoogle = item.provider.toLowerCase() === 'google';
+        const isGoogle = String(item.provider || '').toLowerCase() === 'google';
         return (
           <Badge variant={isGoogle ? 'info' : 'neutral'} className="font-semibold uppercase">
             {item.provider}

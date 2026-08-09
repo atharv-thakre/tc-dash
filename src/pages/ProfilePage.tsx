@@ -12,6 +12,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { formatDate } from '../lib/utils';
+import { getErrorMessage } from '../services/apiClient';
 
 const updatePasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -45,7 +46,7 @@ export const ProfilePage: React.FC<{ onNavigate: (path: string) => void }> = ({ 
       toast.success('Password updated successfully');
       reset();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update password');
+      toast.error(getErrorMessage(err, 'Failed to update password'));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -59,7 +60,7 @@ export const ProfilePage: React.FC<{ onNavigate: (path: string) => void }> = ({ 
       setIsLogoutAllDialogOpen(false);
       onNavigate('/login');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to logout from all sessions');
+      toast.error(getErrorMessage(err, 'Failed to logout from all sessions'));
     } finally {
       setIsSubmitting(false);
     }

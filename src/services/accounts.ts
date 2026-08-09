@@ -1,5 +1,5 @@
 import { Account, CreateAccountInput, PatchAccountInput } from '../types';
-import { apiClient, getStoredApiMode } from './apiClient';
+import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
 import { getDemoAccounts, saveDemoAccounts } from './auth';
 
 export const accountsService = {
@@ -9,8 +9,8 @@ export const accountsService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return getDemoAccounts();
     }
-    const res = await apiClient.get<Account[]>('/account/');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', ['/account/', '/account', '/accounts/', '/accounts']);
+    return normalizeArrayResponse<Account>(resData);
   },
 
   // POST /account/
@@ -35,8 +35,8 @@ export const accountsService = {
       saveDemoAccounts(accounts);
       return newAcc;
     }
-    const res = await apiClient.post<Account>('/account/', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/account/', '/account', '/accounts/'], input);
+    return resData?.data || resData;
   },
 
   // PATCH /account/
@@ -56,20 +56,23 @@ export const accountsService = {
       saveDemoAccounts(accounts);
       return updated;
     }
-    const res = await apiClient.patch<Account>('/account/', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('patch', ['/account/', '/account', '/accounts/'], input);
+    return resData?.data || resData;
   },
 
   // DELETE /account/
-  async deleteAccount(account_id: string): Promise<null> {
+  async deleteAccount(account_id: string | number): Promise<null> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 400));
       let accounts = getDemoAccounts();
-      accounts = accounts.filter((a: Account) => a.id !== account_id);
+      accounts = accounts.filter((a: Account) => String(a.id) !== String(account_id));
       saveDemoAccounts(accounts);
       return null;
     }
-    const res = await apiClient.delete('/account/', { data: { account_id } });
-    return res.data;
+    const accStr = String(account_id);
+    const parsedId = /^\d+$/.test(accStr) ? Number(accStr) : account_id;
+    await requestWithFallback<any>('delete', ['/account/', '/account', '/accounts/'], { account_id: parsedId });
+    return null;
   },
 };
+

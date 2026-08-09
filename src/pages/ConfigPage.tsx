@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { LoadingState } from '../components/common/LoadingState';
+import { getErrorMessage } from '../services/apiClient';
 
 export const ConfigPage: React.FC = () => {
   const [config, setConfig] = useState<ConfigPayload | null>(null);
@@ -62,7 +63,7 @@ export const ConfigPage: React.FC = () => {
       if (data.google) setGoogleForm(data.google);
       if (data.jwt) setJwtForm(data.jwt);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to load system configuration');
+      toast.error(getErrorMessage(err, 'Failed to load system configuration'));
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +80,7 @@ export const ConfigPage: React.FC = () => {
       await configService.updateEmailConfig(emailForm);
       toast.success('Email (SMTP) configuration updated successfully');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update email config');
+      toast.error(getErrorMessage(err, 'Failed to update email config'));
     } finally {
       setSavingSection(null);
     }
@@ -92,7 +93,7 @@ export const ConfigPage: React.FC = () => {
       await configService.updateGithubConfig(githubForm);
       toast.success('GitHub OAuth configuration updated successfully');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update GitHub config');
+      toast.error(getErrorMessage(err, 'Failed to update GitHub config'));
     } finally {
       setSavingSection(null);
     }
@@ -105,7 +106,7 @@ export const ConfigPage: React.FC = () => {
       await configService.updateGoogleConfig(googleForm);
       toast.success('Google OAuth configuration updated successfully');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update Google config');
+      toast.error(getErrorMessage(err, 'Failed to update Google config'));
     } finally {
       setSavingSection(null);
     }
@@ -118,7 +119,7 @@ export const ConfigPage: React.FC = () => {
       await configService.updateJwtConfig(jwtForm);
       toast.success('JWT token configuration updated successfully');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update JWT config');
+      toast.error(getErrorMessage(err, 'Failed to update JWT config'));
     } finally {
       setSavingSection(null);
     }

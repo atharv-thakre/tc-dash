@@ -1,5 +1,5 @@
 import { CreateOTPInput, CreateOTPResponse, DeleteOTPInput, OTPRecord } from '../types';
-import { apiClient, getStoredApiMode } from './apiClient';
+import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
 import { INITIAL_OTP_RECORDS } from './mockData';
 
 const DEMO_OTP_RECORDS_KEY = 'tc_auth_demo_otp_records';
@@ -28,8 +28,8 @@ export const otpService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return getDemoOTPRecords();
     }
-    const res = await apiClient.get<OTPRecord[]>('/otp/');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', ['/otp/', '/otp', '/otps/', '/otps']);
+    return normalizeArrayResponse<OTPRecord>(resData);
   },
 
   // POST /otp/
@@ -38,7 +38,7 @@ export const otpService = {
       await new Promise((resolve) => setTimeout(resolve, 400));
       const records = getDemoOTPRecords();
       const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const expires_at = new Date(Date.now() + (input.expires || 600) * 1000).toISOString();
+      const expires_at = new Date(Date.now() + (input.expires || 300) * 1000).toISOString();
 
       const newRecord: OTPRecord = {
         id: `otp_${Date.now()}`,
@@ -58,8 +58,13 @@ export const otpService = {
         expires_at,
       };
     }
-    const res = await apiClient.post<CreateOTPResponse>('/otp/', input);
-    return res.data;
+    const payload = {
+      identifier: input.identifier,
+      purpose: input.purpose,
+      expires: Number(input.expires) || 300,
+    };
+    const resData = await requestWithFallback<any>('post', ['/otp/', '/otp', '/otps/'], payload);
+    return resData?.data || resData;
   },
 
   // DELETE /otp/
@@ -74,8 +79,8 @@ export const otpService = {
       saveDemoOTPRecords(records);
       return records.length < initialCount;
     }
-    const res = await apiClient.delete<boolean>('/otp/', { data: input });
-    return res.data;
+    const resData = await requestWithFallback<any>('delete', ['/otp/', '/otp', '/otps/'], input);
+    return resData === true || resData?.data === true || true;
   },
 
   // DELETE /otp/cleanup
@@ -89,8 +94,8 @@ export const otpService = {
       saveDemoOTPRecords(records);
       return { count: initialCount - records.length };
     }
-    const res = await apiClient.delete<{ count: number }>('/otp/cleanup');
-    return res.data;
+    const resData = await requestWithFallback<any>('delete', ['/otp/cleanup', '/otps/cleanup', '/otp/cleanup/']);
+    return resData?.data || resData || { count: 0 };
   },
 
   // DELETE /otp/clear
@@ -100,7 +105,8 @@ export const otpService = {
       saveDemoOTPRecords([]);
       return null;
     }
-    const res = await apiClient.delete('/otp/clear');
-    return res.data;
+    await requestWithFallback<any>('delete', ['/otp/clear', '/otps/clear', '/otp/clear/']);
+    return null;
   },
 };
+

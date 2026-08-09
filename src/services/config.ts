@@ -1,5 +1,5 @@
 import { ConfigPayload, EmailConfig, JWTConfig, OAuthConfig } from '../types';
-import { apiClient, getStoredApiMode } from './apiClient';
+import { apiClient, getStoredApiMode, requestWithFallback } from './apiClient';
 import { INITIAL_CONFIG } from './mockData';
 
 const DEMO_CONFIG_KEY = 'tc_auth_demo_config';
@@ -28,8 +28,13 @@ export const configService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return getDemoConfig();
     }
-    const res = await apiClient.get<ConfigPayload>('/config/load/');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', [
+      '/config/load/',
+      '/config/load',
+      '/config/',
+      '/config',
+    ]);
+    return resData?.data || resData;
   },
 
   // POST /config/email
@@ -41,8 +46,8 @@ export const configService = {
       saveDemoConfig(conf);
       return null;
     }
-    const res = await apiClient.post('/config/email', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/config/email', '/config/email/'], input);
+    return resData?.data || resData;
   },
 
   // POST /config/github
@@ -54,8 +59,8 @@ export const configService = {
       saveDemoConfig(conf);
       return null;
     }
-    const res = await apiClient.post('/config/github', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/config/github', '/config/github/'], input);
+    return resData?.data || resData;
   },
 
   // POST /config/google
@@ -67,8 +72,8 @@ export const configService = {
       saveDemoConfig(conf);
       return null;
     }
-    const res = await apiClient.post('/config/google', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/config/google', '/config/google/'], input);
+    return resData?.data || resData;
   },
 
   // POST /config/jwt
@@ -80,7 +85,7 @@ export const configService = {
       saveDemoConfig(conf);
       return null;
     }
-    const res = await apiClient.post('/config/jwt', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/config/jwt', '/config/jwt/'], input);
+    return resData?.data || resData;
   },
 };

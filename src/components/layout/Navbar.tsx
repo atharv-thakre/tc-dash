@@ -202,13 +202,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
                 type="text"
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
-                placeholder="/tc-auth or http://localhost:8000/tc-auth"
+                placeholder="/tc-auth or https://app.totalchaos.online/tc-auth"
                 className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Default is <code className="text-indigo-400 font-mono">/tc-auth</code> according to backend API spec.
-            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5 items-center text-xs">
+              <span className="text-gray-400">Presets:</span>
+              <button
+                type="button"
+                onClick={() => { setInputUrl('/tc-auth'); setApiMode('live'); }}
+                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 font-mono text-[11px] text-gray-700 dark:text-zinc-300 transition-colors"
+              >
+                /tc-auth
+              </button>
+              <button
+                type="button"
+                onClick={() => { setInputUrl('https://app.totalchaos.online/tc-auth'); setApiMode('live'); }}
+                className="px-2 py-0.5 rounded-md bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-mono text-[11px] font-medium transition-colors"
+              >
+                https://app.totalchaos.online/tc-auth
+              </button>
+            </div>
           </div>
 
           <div className="pt-3 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">

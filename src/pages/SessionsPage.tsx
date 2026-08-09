@@ -11,6 +11,7 @@ import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { formatDate, truncateText } from '../lib/utils';
+import { getErrorMessage } from '../services/apiClient';
 
 export const SessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -33,7 +34,7 @@ export const SessionsPage: React.FC = () => {
       const data = await sessionsService.listSessions();
       setSessions(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch sessions');
+      setError(getErrorMessage(err, 'Failed to fetch sessions'));
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +53,7 @@ export const SessionsPage: React.FC = () => {
       setRevokingSessionId(null);
       fetchSessions();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to revoke session');
+      toast.error(getErrorMessage(err, 'Failed to revoke session'));
     } finally {
       setIsSubmitting(false);
     }
@@ -72,7 +73,7 @@ export const SessionsPage: React.FC = () => {
       setTargetAccountId('');
       fetchSessions();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to revoke account sessions');
+      toast.error(getErrorMessage(err, 'Failed to revoke account sessions'));
     } finally {
       setIsSubmitting(false);
     }
@@ -86,7 +87,7 @@ export const SessionsPage: React.FC = () => {
       setIsCleanupOpen(false);
       fetchSessions();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to cleanup expired sessions');
+      toast.error(getErrorMessage(err, 'Failed to cleanup expired sessions'));
     } finally {
       setIsSubmitting(false);
     }
@@ -100,18 +101,19 @@ export const SessionsPage: React.FC = () => {
       setIsClearAllOpen(false);
       fetchSessions();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to clear all sessions');
+      toast.error(getErrorMessage(err, 'Failed to clear all sessions'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filtered = sessions.filter(
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const filtered = safeSessions.filter(
     (s) =>
-      s.account_id.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.toLowerCase().includes(search.toLowerCase()) ||
-      (s.ip_address && s.ip_address.toLowerCase().includes(search.toLowerCase())) ||
-      (s.user_agent && s.user_agent.toLowerCase().includes(search.toLowerCase()))
+      String(s.account_id ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(s.id ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(s.ip_address ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      String(s.user_agent ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [

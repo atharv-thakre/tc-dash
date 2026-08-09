@@ -1,5 +1,5 @@
 import { CreateOAuthLinkInput, DeleteOAuthLinkInput, OAuthLink } from '../types';
-import { apiClient, getStoredApiMode } from './apiClient';
+import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
 import { INITIAL_OAUTH_LINKS } from './mockData';
 
 const DEMO_OAUTH_LINKS_KEY = 'tc_auth_demo_oauth_links';
@@ -28,8 +28,14 @@ export const oauthLinksService = {
       await new Promise((resolve) => setTimeout(resolve, 300));
       return getDemoOAuthLinks();
     }
-    const res = await apiClient.get<OAuthLink[]>('/oauth/');
-    return res.data;
+    const resData = await requestWithFallback<any>('get', [
+      '/oauth/',
+      '/oauth',
+      '/oauth/link',
+      '/oauth/links',
+      '/oauth-links',
+    ]);
+    return normalizeArrayResponse<OAuthLink>(resData);
   },
 
   // POST /oauth/
@@ -48,8 +54,8 @@ export const oauthLinksService = {
       saveDemoOAuthLinks(links);
       return newLink;
     }
-    const res = await apiClient.post<OAuthLink>('/oauth/', input);
-    return res.data;
+    const resData = await requestWithFallback<any>('post', ['/oauth/', '/oauth', '/oauth/link', '/oauth/links'], input);
+    return resData?.data || resData;
   },
 
   // DELETE /oauth/
@@ -63,7 +69,8 @@ export const oauthLinksService = {
       saveDemoOAuthLinks(links);
       return null;
     }
-    const res = await apiClient.delete('/oauth/', { data: input });
-    return res.data;
+    await requestWithFallback<any>('delete', ['/oauth/', '/oauth', '/oauth/link'], input);
+    return null;
   },
 };
+

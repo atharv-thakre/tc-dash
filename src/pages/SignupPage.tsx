@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/auth';
 import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
+import { getErrorMessage } from '../services/apiClient';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -44,7 +45,7 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
       toast.success('Account created successfully');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create account.');
+      toast.error(getErrorMessage(err, 'Failed to create account.'));
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +63,7 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
       setOtpSent(true);
       toast.success('Verification code sent to email');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send OTP verification email.');
+      toast.error(getErrorMessage(err, 'Failed to send OTP verification email.'));
     } finally {
       setIsSendingOtp(false);
     }
@@ -86,7 +87,7 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
       toast.success('Account verified and created successfully');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to complete signup.');
+      toast.error(getErrorMessage(err, 'Failed to complete signup.'));
     } finally {
       setIsLoading(false);
     }
