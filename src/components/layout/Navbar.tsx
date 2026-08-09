@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
           {/* API Mode Selector / Config Trigger */}
           <button
             onClick={() => setIsConfigModalOpen(true)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-medium text-slate-700 dark:text-zinc-300 transition-all shadow-2xs"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-zinc-300 transition-all shadow-2xs"
             title="Configure Backend API Endpoint"
           >
             <span className="relative flex h-2 w-2">
@@ -68,10 +68,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
               <span className={`relative inline-flex rounded-full h-2 w-2 ${apiMode === 'demo' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
             </span>
             <span className="capitalize font-semibold">{apiMode === 'demo' ? 'Demo Mock Mode' : 'Live Server'}</span>
-            <Settings className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 ml-0.5" />
+            <Settings className="w-3.5 h-3.5 text-zinc-500 ml-0.5" />
           </button>
-
-          <ThemeSwitcher className="hidden sm:inline-flex" />
 
           {/* User Profile Menu */}
           {account ? (
