@@ -41,17 +41,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
 
           <div
             onClick={() => onNavigate('/dashboard')}
-            className="flex items-center gap-2.5 cursor-pointer group select-none"
+            className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-transform shrink-0">
-              <Key className="w-4 h-4" />
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-500/25 group-hover:scale-105 transition-all shrink-0 border border-indigo-400/20">
+              <Key className="w-4.5 h-4.5" />
             </div>
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-1.5 leading-tight">
-                <span className="font-extrabold tracking-tight text-slate-900 dark:text-zinc-100 text-base leading-snug">tc-auth</span>
-                <span className="text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 leading-none">v1.0</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-base tracking-tight text-slate-900 dark:text-white">
+                  tc<span className="text-indigo-500 dark:text-indigo-400">-</span>auth
+                </span>
+                <span className="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 rounded-md leading-none shadow-2xs">
+                  v1.3.1
+                </span>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:block leading-tight">Control Panel</p>
+              <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-zinc-500 hidden sm:block leading-tight">
+                Control Panel
+              </p>
             </div>
           </div>
         </div>
