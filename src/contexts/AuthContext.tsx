@@ -32,11 +32,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getInitialToken(): string | null {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromQuery = urlParams.get('access_token') || urlParams.get('token');
+    if (tokenFromQuery) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, tokenFromQuery);
+      return tokenFromQuery;
+    }
+    if (window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const tokenFromHash = hashParams.get('access_token') || hashParams.get('token');
+      if (tokenFromHash) {
+        localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, tokenFromHash);
+        return tokenFromHash;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [account, setAccount] = useState<Account | null>(null);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY));
+  const [token, setToken] = useState<string | null>(getInitialToken);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { apiMode } = useApiConfig();
 

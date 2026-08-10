@@ -5,41 +5,108 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiClient, LOCAL_STORAGE_TOKEN_KEY } from '../services/apiClient';
 
 interface OAuthCallbackPageProps {
-  provider: 'google' | 'github';
+  provider?: 'google' | 'github';
   onNavigate: (path: string) => void;
 }
 
-export const OAuthCallbackPage: React.FC<OAuthCallbackPageProps> = ({ provider, onNavigate }) => {
-  const { refetchMe } = useAuth();
+export const OAuthCallbackPage: React.FC<OAuthCallbackPageProps> = ({ provider = 'google', onNavigate }) => {
+  const { refetchMe, account } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const processCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-
-      if (!code) {
-        setStatus('error');
-        setErrorMessage('Missing OAuth authorization code in callback URL.');
-        return;
+      let hashParams: URLSearchParams | null = null;
+      if (window.location.hash) {
+        hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       }
 
-      try {
-        const res = await apiClient.get(`/${provider}/callback?code=${encodeURIComponent(code)}`);
-        if (res.data?.access_token) {
-          localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, res.data.access_token);
+      // 1. Direct access_token in query or hash parameter (e.g. /oauth/callback?access_token=...)
+      const directToken =
+        urlParams.get('access_token') ||
+        urlParams.get('token') ||
+        hashParams?.get('access_token') ||
+        hashParams?.get('token');
+
+      if (directToken) {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, directToken);
           await refetchMe();
           setStatus('success');
-          toast.success(`Successfully authenticated with ${provider}`);
-          setTimeout(() => onNavigate('/dashboard'), 1000);
-        } else {
-          throw new Error('No access token returned in OAuth payload');
+          toast.success('Successfully logged in via OAuth');
+          setTimeout(() => onNavigate('/dashboard'), 800);
+          return;
+        } catch (err: any) {
+          setStatus('error');
+          setErrorMessage(err.message || 'Failed to process access token from URL.');
+          return;
         }
-      } catch (err: any) {
-        setStatus('error');
-        setErrorMessage(err.message || `Failed to complete ${provider} OAuth authentication.`);
       }
+
+      // 2. Authorization Code in query params
+      const code = urlParams.get('code') || hashParams?.get('code');
+
+      if (code) {
+        const detectedProvider =
+          urlParams.get('provider') ||
+          (window.location.pathname.includes('github') ? 'github' : 'google');
+
+        const endpointsToTry = [
+          `/${detectedProvider}/callback?code=${encodeURIComponent(code)}`,
+          `/tc-auth/${detectedProvider}/callback?code=${encodeURIComponent(code)}`,
+          `/oauth/callback?code=${encodeURIComponent(code)}`,
+        ];
+
+        let tokenObtained: string | null = null;
+        let lastError: any = null;
+
+        for (const ep of endpointsToTry) {
+          try {
+            const res = await apiClient.get(ep);
+            if (res.data?.access_token || res.data?.token) {
+              tokenObtained = res.data.access_token || res.data.token;
+              break;
+            }
+          } catch (err: any) {
+            lastError = err;
+          }
+        }
+
+        if (tokenObtained) {
+          localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, tokenObtained);
+          await refetchMe();
+          setStatus('success');
+          toast.success(`Successfully authenticated with ${detectedProvider}`);
+          setTimeout(() => onNavigate('/dashboard'), 800);
+          return;
+        } else {
+          setStatus('error');
+          setErrorMessage(
+            lastError?.response?.data?.message ||
+              lastError?.message ||
+              'Failed to exchange authorization code for access token.'
+          );
+          return;
+        }
+      }
+
+      // 3. Fallback: check if user is already authenticated in local state
+      const existingToken = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+      if (existingToken) {
+        try {
+          await refetchMe();
+          setStatus('success');
+          toast.success('Session verified');
+          setTimeout(() => onNavigate('/dashboard'), 800);
+          return;
+        } catch {
+          // Token invalid
+        }
+      }
+
+      setStatus('error');
+      setErrorMessage('Missing OAuth authorization code or access token in callback URL.');
     };
 
     processCallback();

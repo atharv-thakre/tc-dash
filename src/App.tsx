@@ -30,9 +30,18 @@ const queryClient = new QueryClient({
 function AppRouter() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const pathname = window.location.pathname;
-    if (pathname.includes('/google/callback')) return '/google/callback';
-    if (pathname.includes('/github/callback')) return '/github/callback';
-    return '/dashboard';
+    const search = window.location.search;
+    if (
+      pathname.includes('/callback') ||
+      pathname.includes('/oauth') ||
+      search.includes('access_token=') ||
+      search.includes('code=')
+    ) {
+      if (pathname.includes('github')) return '/github/callback';
+      if (pathname.includes('google')) return '/google/callback';
+      return '/oauth/callback';
+    }
+    return pathname && pathname !== '/' ? pathname : '/dashboard';
   });
 
   const { account } = useAuth();
@@ -51,12 +60,14 @@ function AppRouter() {
     return <SignupPage onNavigate={handleNavigate} />;
   }
 
-  if (currentPath === '/google/callback') {
-    return <OAuthCallbackPage provider="google" onNavigate={handleNavigate} />;
-  }
-
-  if (currentPath === '/github/callback') {
-    return <OAuthCallbackPage provider="github" onNavigate={handleNavigate} />;
+  if (
+    currentPath === '/google/callback' ||
+    currentPath === '/github/callback' ||
+    currentPath === '/oauth/callback' ||
+    currentPath.includes('/callback')
+  ) {
+    const provider = currentPath.includes('github') ? 'github' : 'google';
+    return <OAuthCallbackPage provider={provider} onNavigate={handleNavigate} />;
   }
 
   // If not logged in and requesting protected pages, show Login Page directly
