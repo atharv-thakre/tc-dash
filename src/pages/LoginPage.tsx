@@ -232,8 +232,8 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
         {/* OAuth Buttons */}
         <div className="space-y-2.5 mb-5">
-          <ProviderButton provider="google" />
-          <ProviderButton provider="github" />
+          <ProviderButton provider="google" onSuccessNavigate={() => onNavigate('/dashboard')} />
+          <ProviderButton provider="github" onSuccessNavigate={() => onNavigate('/dashboard')} />
         </div>
 
         <div className="relative my-5">

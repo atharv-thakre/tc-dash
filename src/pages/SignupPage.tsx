@@ -109,8 +109,8 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
 
         {/* OAuth Buttons */}
         <div className="space-y-2 mb-6">
-          <ProviderButton provider="google" label="Sign up with Google" />
-          <ProviderButton provider="github" label="Sign up with GitHub" />
+          <ProviderButton provider="google" label="Sign up with Google" onSuccessNavigate={() => onNavigate('/dashboard')} />
+          <ProviderButton provider="github" label="Sign up with GitHub" onSuccessNavigate={() => onNavigate('/dashboard')} />
         </div>
 
         <div className="relative my-6">

@@ -1,19 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { authService } from '../../services/auth';
+import { useAuth } from '../../contexts/AuthContext';
+import { useApiConfig } from '../../contexts/ApiConfigContext';
 
 interface ProviderButtonProps {
   provider: 'google' | 'github';
   label?: string;
   onClick?: () => void;
+  onSuccessNavigate?: () => void;
 }
 
-export const ProviderButton: React.FC<ProviderButtonProps> = ({ provider, label, onClick }) => {
+export const ProviderButton: React.FC<ProviderButtonProps> = ({
+  provider,
+  label,
+  onClick,
+  onSuccessNavigate,
+}) => {
+  const { loginOAuth } = useAuth();
+  const { apiMode } = useApiConfig();
+  const [isLoading, setIsLoading] = useState(false);
+
   const redirectUrl = authService.getOAuthLoginUrl(provider);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (onClick) {
       onClick();
+      return;
+    }
+
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginOAuth(provider);
+        toast.success(`Signed in with ${provider === 'google' ? 'Google' : 'GitHub'} (Demo Mode)`);
+        if (onSuccessNavigate) {
+          onSuccessNavigate();
+        }
+      } catch (err: any) {
+        toast.error(err.message || 'Demo OAuth login failed');
+      } finally {
+        setIsLoading(false);
+      }
     } else {
+      // Live server mode: navigate to backend OAuth login route
       window.location.href = redirectUrl;
     }
   };
@@ -21,12 +53,15 @@ export const ProviderButton: React.FC<ProviderButtonProps> = ({ provider, label,
   const isGoogle = provider === 'google';
 
   return (
-    <a
-      href={redirectUrl}
+    <button
+      type="button"
       onClick={handleClick}
-      className="flex items-center justify-center gap-3 w-full px-4 py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-all shadow-2xs hover:shadow-xs active:scale-[0.99]"
+      disabled={isLoading}
+      className="flex items-center justify-center gap-3 w-full px-4 py-2.5 text-sm font-medium rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-all shadow-2xs hover:shadow-xs active:scale-[0.99] disabled:opacity-60 cursor-pointer"
     >
-      {isGoogle ? (
+      {isLoading ? (
+        <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+      ) : isGoogle ? (
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path
             fill="#4285F4"
@@ -51,6 +86,6 @@ export const ProviderButton: React.FC<ProviderButtonProps> = ({ provider, label,
         </svg>
       )}
       <span>{label || `Continue with ${isGoogle ? 'Google' : 'GitHub'}`}</span>
-    </a>
+    </button>
   );
 };

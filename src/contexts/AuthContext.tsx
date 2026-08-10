@@ -24,6 +24,7 @@ interface AuthContextType {
   loginOTP: (input: LoginOTPInput) => Promise<void>;
   signupPassword: (input: SignupPasswordInput) => Promise<void>;
   signupOTP: (input: SignupOTPInput) => Promise<void>;
+  loginOAuth: (provider: 'google' | 'github') => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   refetchMe: () => Promise<void>;
@@ -88,6 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await fetchMe();
   };
 
+  const loginOAuth = async (provider: 'google' | 'github') => {
+    const res = await authService.loginOAuthDemo(provider);
+    setToken(res.access_token);
+    setAccount(res.account);
+    await fetchMe();
+  };
+
   const logout = async () => {
     await profileService.logout();
     setToken(null);
@@ -121,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginOTP,
         signupPassword,
         signupOTP,
+        loginOAuth,
         logout,
         logoutAll,
         refetchMe: fetchMe,

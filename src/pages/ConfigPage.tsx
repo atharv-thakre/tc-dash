@@ -311,14 +311,29 @@ export const ConfigPage: React.FC = () => {
               </FormField>
 
               <FormField label="Redirect Callback URI" required>
-                <input
-                  type="text"
-                  value={githubForm.redirect_uri}
-                  onChange={(e) => setGithubForm({ ...githubForm, redirect_uri: e.target.value })}
-                  placeholder="http://localhost:3000/tc-auth/github/callback"
-                  required
-                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
-                />
+                <div className="space-y-1.5">
+                  <input
+                    type="text"
+                    value={githubForm.redirect_uri}
+                    onChange={(e) => setGithubForm({ ...githubForm, redirect_uri: e.target.value })}
+                    placeholder="http://localhost:3000/tc-auth/github/callback"
+                    required
+                    className="w-full px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
+                  />
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const detected = `${window.location.origin}/tc-auth/github/callback`;
+                        setGithubForm({ ...githubForm, redirect_uri: detected });
+                        toast.success('Updated GitHub Redirect URI');
+                      }}
+                      className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    >
+                      + Use Current Origin URI ({window.location.origin}/tc-auth/github/callback)
+                    </button>
+                  </div>
+                </div>
               </FormField>
 
               <div className="pt-3 flex justify-end">
@@ -395,14 +410,29 @@ export const ConfigPage: React.FC = () => {
               </FormField>
 
               <FormField label="Redirect Callback URI" required>
-                <input
-                  type="text"
-                  value={googleForm.redirect_uri}
-                  onChange={(e) => setGoogleForm({ ...googleForm, redirect_uri: e.target.value })}
-                  placeholder="http://localhost:3000/tc-auth/google/callback"
-                  required
-                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
-                />
+                <div className="space-y-1.5">
+                  <input
+                    type="text"
+                    value={googleForm.redirect_uri}
+                    onChange={(e) => setGoogleForm({ ...googleForm, redirect_uri: e.target.value })}
+                    placeholder="http://localhost:3000/tc-auth/google/callback"
+                    required
+                    className="w-full px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
+                  />
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const detected = `${window.location.origin}/tc-auth/google/callback`;
+                        setGoogleForm({ ...googleForm, redirect_uri: detected });
+                        toast.success('Updated Google Redirect URI');
+                      }}
+                      className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    >
+                      + Use Current Origin URI ({window.location.origin}/tc-auth/google/callback)
+                    </button>
+                  </div>
+                </div>
               </FormField>
 
               <div className="pt-3 flex justify-end">

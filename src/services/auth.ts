@@ -235,4 +235,43 @@ export const authService = {
   getOAuthLoginUrl(provider: 'google' | 'github'): string {
     return `${getCustomBaseUrl()}/${provider}/login`;
   },
+
+  async loginOAuthDemo(provider: 'google' | 'github'): Promise<AuthResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const accounts = getDemoAccounts();
+    const isGoogle = provider === 'google';
+    const email = isGoogle ? 'alex.google@tcauth.dev' : 'sam.github@tcauth.dev';
+    const name = isGoogle ? 'Alex Google User' : 'Sam GitHub Dev';
+    const handle = isGoogle ? 'alex_google' : 'sam_github';
+    const avatar_url = isGoogle
+      ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80';
+
+    let acc = accounts.find((a: any) => a.email.toLowerCase() === email.toLowerCase());
+    if (!acc) {
+      acc = {
+        id: `acc_oauth_${provider}_${Date.now()}`,
+        uid: `uid_oauth_${provider}_${Date.now()}`,
+        name,
+        handle,
+        email,
+        phone: null,
+        avatar_url,
+        role: 'user',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      accounts.push(acc);
+      saveDemoAccounts(accounts);
+    }
+
+    const response: AuthResponse = {
+      access_token: `tc_demo_oauth_token_${provider}_${acc.id}_${Date.now()}`,
+      token_type: 'Bearer',
+      account: acc,
+    };
+    localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
+    return response;
+  },
 };
