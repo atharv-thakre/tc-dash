@@ -61,12 +61,13 @@ export const OAuthLinksPage: React.FC = () => {
   const [provider, setProvider] = useState('google');
   const [providerUserId, setProviderUserId] = useState('');
 
-  const fetchLinks = async (p = page, l = limit) => {
+  const fetchLinks = async (p = page, l = limit, searchOverride?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      if (searchValue.trim()) {
-        const res = await oauthLinksService.queryOAuthLinks(searchField, searchValue.trim(), p, l);
+      const q = searchOverride !== undefined ? searchOverride : searchValue;
+      if (q.trim()) {
+        const res = await oauthLinksService.queryOAuthLinks(searchField, q.trim(), p, l);
         setLinks(res.items);
         setTotalCount(res.total);
       } else {
@@ -89,10 +90,7 @@ export const OAuthLinksPage: React.FC = () => {
   const handleResetSearch = () => {
     setSearchValue('');
     setPage(1);
-    oauthLinksService.listLinks(1, limit).then((res) => {
-      setLinks(res.items);
-      setTotalCount(res.total);
-    });
+    fetchLinks(1, limit, '');
   };
 
   useEffect(() => {
@@ -249,11 +247,11 @@ export const OAuthLinksPage: React.FC = () => {
         action={
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchLinks}
+              onClick={() => fetchLinks(page, limit)}
               className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               title="Refresh"
             >
-              <RefreshCw className="w-4 h-4 text-gray-500" />
+              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setIsLinkModalOpen(true)}

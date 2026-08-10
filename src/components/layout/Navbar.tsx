@@ -41,17 +41,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
 
           <div
             onClick={() => onNavigate('/dashboard')}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group select-none"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-transform">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-transform shrink-0">
               <Key className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold tracking-tight text-slate-900 dark:text-zinc-100 text-base">tc-auth</span>
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">v1.0</span>
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span className="font-extrabold tracking-tight text-slate-900 dark:text-zinc-100 text-base leading-snug">tc-auth</span>
+                <span className="text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 leading-none">v1.0</span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-zinc-400 hidden sm:block">Control Panel</p>
+              <p className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 hidden sm:block leading-tight">Control Panel</p>
             </div>
           </div>
         </div>

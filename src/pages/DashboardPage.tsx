@@ -90,7 +90,7 @@ export const DashboardPage: React.FC<{ onNavigate: (path: string) => void }> = (
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all shadow-2xs"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
+            <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${isLoadingStats ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         }

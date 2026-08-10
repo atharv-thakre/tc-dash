@@ -41,12 +41,13 @@ export const OtpPage: React.FC = () => {
   const [purpose, setPurpose] = useState<OTPPurpose>('login');
   const [expiresSeconds, setExpiresSeconds] = useState(600); // default 10 mins
 
-  const fetchRecords = async (p = page, l = limit) => {
+  const fetchRecords = async (p = page, l = limit, searchOverride?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      if (searchValue.trim()) {
-        const res = await otpService.queryOTPRecords(searchField, searchValue.trim(), p, l);
+      const q = searchOverride !== undefined ? searchOverride : searchValue;
+      if (q.trim()) {
+        const res = await otpService.queryOTPRecords(searchField, q.trim(), p, l);
         setRecords(res.items);
         setTotalCount(res.total);
       } else {
@@ -69,10 +70,7 @@ export const OtpPage: React.FC = () => {
   const handleResetSearch = () => {
     setSearchValue('');
     setPage(1);
-    otpService.listRecords(1, limit).then((res) => {
-      setRecords(res.items);
-      setTotalCount(res.total);
-    });
+    fetchRecords(1, limit, '');
   };
 
   useEffect(() => {
@@ -151,13 +149,22 @@ export const OtpPage: React.FC = () => {
 
   const columns = [
     {
-      header: 'Identifier (Email/Phone)',
+      header: 'Identifier / ID',
       sortable: true,
       accessorKey: 'identifier' as const,
       cell: (item: OTPRecord) => (
-        <div>
-          <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white block">{item.identifier}</span>
-          <span className="text-[10px] font-mono text-gray-400">ID: {item.id}</span>
+        <div className="flex items-center gap-3 py-1">
+          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <div className="space-y-0.5">
+            <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white block">
+              {item.identifier}
+            </span>
+            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-200/60 dark:border-gray-700/50 inline-block">
+              #{item.id}
+            </span>
+          </div>
         </div>
       ),
     },
@@ -221,11 +228,11 @@ export const OtpPage: React.FC = () => {
         action={
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchRecords}
+              onClick={() => fetchRecords(page, limit)}
               className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               title="Refresh"
             >
-              <RefreshCw className="w-4 h-4 text-gray-500" />
+              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => {

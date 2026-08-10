@@ -115,18 +115,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Bottom Card for Superadmin Status */}
-          <div className="mt-auto pt-4">
-            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                  {account?.role || 'Guest'} Mode
-                </span>
-                <Badge variant={isSuperAdmin ? 'purple' : 'neutral'} className="text-[10px]">
+          <div className="mt-auto pt-4 space-y-3">
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate capitalize leading-normal">
+                    {account?.role || 'Guest'} Mode
+                  </span>
+                </div>
+                <Badge variant={isSuperAdmin ? 'purple' : 'neutral'} className="text-[10px] shrink-0">
                   {isSuperAdmin ? 'SUPERADMIN' : 'USER'}
                 </Badge>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-tight">
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
                 {isSuperAdmin
                   ? 'Full administrative privileges active. All 4 config cards & CRUD models accessible.'
                   : 'Standard permissions. Access to Profile settings and personal sessions.'}
@@ -135,11 +137,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {account && (
               <button
-                onClick={logout}
-                className="mt-3 flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors"
+                onClick={() => logout()}
+                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all shadow-2xs cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Sign Out
+                <span>Sign Out</span>
               </button>
             )}
           </div>

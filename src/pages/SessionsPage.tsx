@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Globe, Laptop, RefreshCw, ShieldAlert, ShieldOff, Trash2, Zap } from 'lucide-react';
+import { Calendar, Globe, Laptop, RefreshCw, ShieldAlert, ShieldOff, Trash2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { SessionRecord } from '../types';
 import { sessionsService } from '../services/sessions';
@@ -39,12 +39,13 @@ export const SessionsPage: React.FC = () => {
   const [targetAccountId, setTargetAccountId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchSessions = async (p = page, l = limit) => {
+  const fetchSessions = async (p = page, l = limit, searchOverride?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      if (searchValue.trim()) {
-        const res = await sessionsService.querySessions(searchField, searchValue.trim(), p, l);
+      const q = searchOverride !== undefined ? searchOverride : searchValue;
+      if (q.trim()) {
+        const res = await sessionsService.querySessions(searchField, q.trim(), p, l);
         setSessions(res.items);
         setTotalCount(res.total);
       } else {
@@ -67,10 +68,7 @@ export const SessionsPage: React.FC = () => {
   const handleResetSearch = () => {
     setSearchValue('');
     setPage(1);
-    sessionsService.listSessions(1, limit).then((res) => {
-      setSessions(res.items);
-      setTotalCount(res.total);
-    });
+    fetchSessions(1, limit, '');
   };
 
   useEffect(() => {
@@ -144,44 +142,68 @@ export const SessionsPage: React.FC = () => {
 
   const columns = [
     {
-      header: 'Session ID / Account ID',
+      header: 'Session Identity',
       sortable: true,
       accessorKey: 'id' as const,
       cell: (item: SessionRecord) => (
-        <div>
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white block">{item.id}</span>
-          <span className="text-xs font-mono font-semibold text-indigo-500 block mt-0.5">{item.account_id}</span>
+        <div className="flex items-center gap-3 py-1">
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                Session ID
+              </span>
+              <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-200/80 dark:border-gray-700/60">
+                #{item.id}
+              </span>
+            </div>
+            {item.account_id && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-indigo-400 dark:text-indigo-400/80 uppercase tracking-wider">
+                  Account
+                </span>
+                <span className="font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                  {item.account_id}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       ),
     },
     {
-      header: 'IP & User Agent',
+      header: 'Client & Network',
       sortable: true,
       accessorKey: 'ip_address' as const,
       cell: (item: SessionRecord) => (
-        <div className="space-y-0.5">
-          <p className="text-xs font-mono text-gray-900 dark:text-gray-200 flex items-center gap-1">
-            <Globe className="w-3 h-3 text-gray-400" />
-            {item.ip_address || 'Unknown IP'}
-          </p>
-          <p className="text-[11px] text-gray-400 max-w-xs truncate" title={item.user_agent}>
-            {truncateText(item.user_agent || 'Unknown Client', 45)}
+        <div className="space-y-1 py-0.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/60 font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+            <Globe className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            <span>{item.ip_address || 'Unknown IP'}</span>
+          </div>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 max-w-xs truncate pl-0.5" title={item.user_agent}>
+            {truncateText(item.user_agent || 'Unknown Client', 42)}
           </p>
         </div>
       ),
     },
     {
-      header: 'Status & Expiry',
+      header: 'Session Status',
       sortable: true,
       accessorKey: 'expires_at' as const,
       cell: (item: SessionRecord) => {
         const isExpired = new Date(item.expires_at).getTime() < Date.now();
         return (
-          <div>
-            <Badge variant={isExpired ? 'danger' : 'success'}>
+          <div className="space-y-1">
+            <Badge variant={isExpired ? 'danger' : 'success'} className="font-semibold px-2.5 py-0.5">
               {isExpired ? 'Expired' : 'Active'}
             </Badge>
-            <p className="text-[10px] text-gray-400 font-mono mt-0.5">{formatDate(item.expires_at)}</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+              <span>{formatDate(item.expires_at)}</span>
+            </p>
           </div>
         );
       },
@@ -190,7 +212,12 @@ export const SessionsPage: React.FC = () => {
       header: 'Created At',
       sortable: true,
       accessorKey: 'created_at' as const,
-      cell: (item: SessionRecord) => <span className="text-xs font-mono text-gray-400">{formatDate(item.created_at)}</span>,
+      cell: (item: SessionRecord) => (
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
+          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span>{formatDate(item.created_at)}</span>
+        </div>
+      ),
     },
   ];
 
@@ -202,11 +229,11 @@ export const SessionsPage: React.FC = () => {
         action={
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={fetchSessions}
+              onClick={() => fetchSessions(page, limit)}
               className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               title="Refresh"
             >
-              <RefreshCw className="w-4 h-4 text-gray-500" />
+              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setIsRevokeAllAccountOpen(true)}
@@ -263,11 +290,11 @@ export const SessionsPage: React.FC = () => {
         actions={(item) => (
           <button
             onClick={() => setRevokingSessionId(item.id)}
-            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-2xs"
             title="Revoke session"
           >
-            <ShieldOff className="w-4 h-4" />
-            Revoke
+            <ShieldOff className="w-3.5 h-3.5" />
+            <span>Revoke</span>
           </button>
         )}
       />

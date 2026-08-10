@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -43,6 +43,15 @@ function AppRouter() {
     }
     return pathname && pathname !== '/' ? pathname : '/dashboard';
   });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      setCurrentPath(pathname && pathname !== '/' ? pathname : '/login');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const { account } = useAuth();
 

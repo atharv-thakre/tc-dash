@@ -58,12 +58,13 @@ export const AccountsPage: React.FC = () => {
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchAccounts = async (p = page, l = limit) => {
+  const fetchAccounts = async (p = page, l = limit, searchOverride?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      if (searchValue.trim()) {
-        const res = await accountsService.queryAccounts(searchField, searchValue.trim(), p, l);
+      const q = searchOverride !== undefined ? searchOverride : searchValue;
+      if (q.trim()) {
+        const res = await accountsService.queryAccounts(searchField, q.trim(), p, l);
         setAccounts(res.items);
         setTotalCount(res.total);
       } else {
@@ -86,10 +87,7 @@ export const AccountsPage: React.FC = () => {
   const handleResetSearch = () => {
     setSearchValue('');
     setPage(1);
-    accountsService.listAccounts(1, limit).then((res) => {
-      setAccounts(res.items);
-      setTotalCount(res.total);
-    });
+    fetchAccounts(1, limit, '');
   };
 
   useEffect(() => {
@@ -199,12 +197,14 @@ export const AccountsPage: React.FC = () => {
 
   const columns = [
     {
-      header: 'ID / Account ID',
+      header: 'ID',
       sortable: true,
       accessorKey: 'id' as const,
       cell: (item: Account) => (
-        <div>
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white block">{item.id}</span>
+        <div className="space-y-0.5">
+          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded border border-gray-200/80 dark:border-gray-700/60 inline-block">
+            #{item.id}
+          </span>
           {(item as any).account_id && String((item as any).account_id) !== String(item.id) && (
             <span className="text-[10px] font-mono text-indigo-500 block">Acc ID: {(item as any).account_id}</span>
           )}
@@ -283,7 +283,7 @@ export const AccountsPage: React.FC = () => {
               className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               title="Refresh table"
             >
-              <RefreshCw className="w-4 h-4 text-gray-500" />
+              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={handleOpenCreate}

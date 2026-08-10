@@ -56,7 +56,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token if unauthenticated
+      localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     return Promise.reject(error);
   }

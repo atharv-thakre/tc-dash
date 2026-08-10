@@ -62,6 +62,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { apiMode } = useApiConfig();
 
+  const clearAuthAndRedirectToLogin = () => {
+    localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+    setToken(null);
+    setAccount(null);
+    setSession(null);
+    setPayload(null);
+    if (window.location.pathname !== '/login') {
+      window.history.pushState({}, '', '/login');
+      window.dispatchEvent(new Event('popstate'));
+    }
+  };
+
   const fetchMe = async () => {
     setIsLoading(true);
     try {
@@ -70,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(data.session || null);
       setPayload(data.payload || null);
     } catch {
-      // If error fetching profile, reset user state
+      // If error fetching profile, reset user state and clear invalid token
       setAccount(null);
       setSession(null);
       setPayload(null);
@@ -82,6 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchMe();
   }, [apiMode]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      clearAuthAndRedirectToLogin();
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, []);
 
   const loginPassword = async (input: LoginPasswordInput) => {
     const res = await authService.loginPassword(input);
@@ -119,19 +139,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await profileService.logout();
-    setToken(null);
-    setAccount(null);
-    setSession(null);
-    setPayload(null);
+    try {
+      await profileService.logout();
+    } catch (err) {
+      console.warn('Logout API call failed or session already expired:', err);
+    } finally {
+      clearAuthAndRedirectToLogin();
+    }
   };
 
   const logoutAll = async () => {
-    await profileService.logoutAll();
-    setToken(null);
-    setAccount(null);
-    setSession(null);
-    setPayload(null);
+    try {
+      await profileService.logoutAll();
+    } catch (err) {
+      console.warn('LogoutAll API call failed or session already expired:', err);
+    } finally {
+      clearAuthAndRedirectToLogin();
+    }
   };
 
   const isSuperAdmin = account?.role === 'superadmin';
