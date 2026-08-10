@@ -4,8 +4,14 @@ import { toast } from 'sonner';
 import { CreateOTPResponse, OTPPurpose, OTPRecord } from '../types';
 import { otpService } from '../services/otp';
 import { DataTable } from '../components/common/DataTable';
-import { SearchBar } from '../components/common/SearchBar';
+import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+
+const OTP_SEARCH_FIELDS: SearchFieldOption[] = [
+  { key: 'identifier', label: 'Identifier' },
+  { key: 'id', label: 'OTP ID' },
+  { key: 'purpose', label: 'Purpose' },
+];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
@@ -15,7 +21,8 @@ import { getErrorMessage } from '../services/apiClient';
 
 export const OtpPage: React.FC = () => {
   const [records, setRecords] = useState<OTPRecord[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState<string>('identifier');
+  const [searchValue, setSearchValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,14 +47,34 @@ export const OtpPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await otpService.listRecords(p, l);
-      setRecords(res.items);
-      setTotalCount(res.total);
+      if (searchValue.trim()) {
+        const res = await otpService.queryOTPRecords(searchField, searchValue.trim(), p, l);
+        setRecords(res.items);
+        setTotalCount(res.total);
+      } else {
+        const res = await otpService.listRecords(p, l);
+        setRecords(res.items);
+        setTotalCount(res.total);
+      }
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch OTP records'));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuerySubmit = () => {
+    setPage(1);
+    fetchRecords(1, limit);
+  };
+
+  const handleResetSearch = () => {
+    setSearchValue('');
+    setPage(1);
+    otpService.listRecords(1, limit).then((res) => {
+      setRecords(res.items);
+      setTotalCount(res.total);
+    });
   };
 
   useEffect(() => {
@@ -123,12 +150,6 @@ export const OtpPage: React.FC = () => {
   };
 
   const safeRecords = Array.isArray(records) ? records : [];
-  const filtered = safeRecords.filter(
-    (r) =>
-      String(r.identifier ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(r.purpose ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(r.id ?? '').toLowerCase().includes(search.toLowerCase())
-  );
 
   const columns = [
     {
@@ -235,12 +256,22 @@ export const OtpPage: React.FC = () => {
         }
       />
 
-      <div className="flex items-center justify-between gap-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search identifier or purpose..." />
+      {/* Query Search Bubble */}
+      <div className="w-full">
+        <SearchBubble
+          fields={OTP_SEARCH_FIELDS}
+          activeFieldKey={searchField}
+          onFieldChange={(key) => setSearchField(key)}
+          searchValue={searchValue}
+          onSearchValueChange={(val) => setSearchValue(val)}
+          onSearchSubmit={handleQuerySubmit}
+          onReset={handleResetSearch}
+          isLoading={isLoading}
+        />
       </div>
 
       <DataTable
-        data={filtered}
+        data={safeRecords}
         columns={columns}
         isLoading={isLoading}
         error={error}

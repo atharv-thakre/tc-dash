@@ -48,6 +48,44 @@ export const sessionsService = {
     return normalizePaginatedResponse<SessionRecord>(resData);
   },
 
+  // GET /session/query or GET /session/ with query filters
+  async querySessions(
+    field: string,
+    value: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedResult<SessionRecord>> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const all = getDemoSessions();
+      const filtered = all.filter((s: any) => {
+        if (!value) return true;
+        const val = String(s[field] || '').toLowerCase();
+        return val.includes(value.toLowerCase());
+      });
+      const start = (page - 1) * limit;
+      return {
+        items: filtered.slice(start, start + limit),
+        total: filtered.length,
+      };
+    }
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/session/query', '/session/query/', '/session/', '/session', '/sessions/query', '/sessions/'],
+      {
+        params: {
+          field,
+          value,
+          [field]: value,
+          query: value,
+          page,
+          limit,
+        },
+      }
+    );
+    return normalizePaginatedResponse<SessionRecord>(resData);
+  },
+
   // DELETE /session/
   async deleteSession(session_id: string | number): Promise<null> {
     if (getStoredApiMode() === 'demo') {

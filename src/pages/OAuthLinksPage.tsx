@@ -4,8 +4,15 @@ import { toast } from 'sonner';
 import { OAuthLink } from '../types';
 import { oauthLinksService } from '../services/oauthLinks';
 import { DataTable } from '../components/common/DataTable';
-import { SearchBar } from '../components/common/SearchBar';
+import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+
+const OAUTH_SEARCH_FIELDS: SearchFieldOption[] = [
+  { key: 'account_id', label: 'Account ID' },
+  { key: 'provider_user_id', label: 'Provider User ID' },
+  { key: 'provider', label: 'Provider' },
+  { key: 'id', label: 'Link ID' },
+];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
@@ -15,7 +22,8 @@ import { getErrorMessage } from '../services/apiClient';
 
 export const OAuthLinksPage: React.FC = () => {
   const [links, setLinks] = useState<OAuthLink[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState<string>('account_id');
+  const [searchValue, setSearchValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,14 +46,34 @@ export const OAuthLinksPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await oauthLinksService.listLinks(p, l);
-      setLinks(res.items);
-      setTotalCount(res.total);
+      if (searchValue.trim()) {
+        const res = await oauthLinksService.queryOAuthLinks(searchField, searchValue.trim(), p, l);
+        setLinks(res.items);
+        setTotalCount(res.total);
+      } else {
+        const res = await oauthLinksService.listLinks(p, l);
+        setLinks(res.items);
+        setTotalCount(res.total);
+      }
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch OAuth provider links'));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuerySubmit = () => {
+    setPage(1);
+    fetchLinks(1, limit);
+  };
+
+  const handleResetSearch = () => {
+    setSearchValue('');
+    setPage(1);
+    oauthLinksService.listLinks(1, limit).then((res) => {
+      setLinks(res.items);
+      setTotalCount(res.total);
+    });
   };
 
   useEffect(() => {
@@ -97,12 +125,6 @@ export const OAuthLinksPage: React.FC = () => {
   };
 
   const safeLinks = Array.isArray(links) ? links : [];
-  const filtered = safeLinks.filter(
-    (l) =>
-      String(l.account_id ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(l.provider ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(l.provider_user_id ?? '').toLowerCase().includes(search.toLowerCase())
-  );
 
   const columns = [
     {
@@ -176,12 +198,22 @@ export const OAuthLinksPage: React.FC = () => {
         }
       />
 
-      <div className="flex items-center justify-between gap-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by account ID or provider user ID..." />
+      {/* Query Search Bubble */}
+      <div className="w-full">
+        <SearchBubble
+          fields={OAUTH_SEARCH_FIELDS}
+          activeFieldKey={searchField}
+          onFieldChange={(key) => setSearchField(key)}
+          searchValue={searchValue}
+          onSearchValueChange={(val) => setSearchValue(val)}
+          onSearchSubmit={handleQuerySubmit}
+          onReset={handleResetSearch}
+          isLoading={isLoading}
+        />
       </div>
 
       <DataTable
-        data={filtered}
+        data={safeLinks}
         columns={columns}
         isLoading={isLoading}
         error={error}

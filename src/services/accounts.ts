@@ -29,6 +29,44 @@ export const accountsService = {
     return normalizePaginatedResponse<Account>(resData);
   },
 
+  // GET /account/query or GET /account/ with query filters
+  async queryAccounts(
+    field: string,
+    value: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedResult<Account>> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const all = getDemoAccounts();
+      const filtered = all.filter((acc: any) => {
+        if (!value) return true;
+        const val = String(acc[field] || '').toLowerCase();
+        return val.includes(value.toLowerCase());
+      });
+      const start = (page - 1) * limit;
+      return {
+        items: filtered.slice(start, start + limit),
+        total: filtered.length,
+      };
+    }
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/account/query', '/account/query/', '/account/', '/account', '/accounts/query', '/accounts/'],
+      {
+        params: {
+          field,
+          value,
+          [field]: value,
+          query: value,
+          page,
+          limit,
+        },
+      }
+    );
+    return normalizePaginatedResponse<Account>(resData);
+  },
+
   // POST /account/
   async createAccount(input: CreateAccountInput): Promise<Account> {
     if (getStoredApiMode() === 'demo') {

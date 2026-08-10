@@ -48,6 +48,44 @@ export const oauthLinksService = {
     return normalizePaginatedResponse<OAuthLink>(resData);
   },
 
+  // GET /oauth/query or GET /oauth/ with query filters
+  async queryOAuthLinks(
+    field: string,
+    value: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedResult<OAuthLink>> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const all = getDemoOAuthLinks();
+      const filtered = all.filter((link: any) => {
+        if (!value) return true;
+        const val = String(link[field] || '').toLowerCase();
+        return val.includes(value.toLowerCase());
+      });
+      const start = (page - 1) * limit;
+      return {
+        items: filtered.slice(start, start + limit),
+        total: filtered.length,
+      };
+    }
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/oauth/query', '/oauth/query/', '/oauth/', '/oauth', '/oauth/link/query', '/oauth/link'],
+      {
+        params: {
+          field,
+          value,
+          [field]: value,
+          query: value,
+          page,
+          limit,
+        },
+      }
+    );
+    return normalizePaginatedResponse<OAuthLink>(resData);
+  },
+
   // POST /oauth/
   async createLink(input: CreateOAuthLinkInput): Promise<OAuthLink> {
     if (getStoredApiMode() === 'demo') {

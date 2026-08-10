@@ -48,6 +48,44 @@ export const otpService = {
     return normalizePaginatedResponse<OTPRecord>(resData);
   },
 
+  // GET /otp/query or GET /otp/ with query filters
+  async queryOTPRecords(
+    field: string,
+    value: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedResult<OTPRecord>> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const all = getDemoOTPRecords();
+      const filtered = all.filter((otp: any) => {
+        if (!value) return true;
+        const val = String(otp[field] || '').toLowerCase();
+        return val.includes(value.toLowerCase());
+      });
+      const start = (page - 1) * limit;
+      return {
+        items: filtered.slice(start, start + limit),
+        total: filtered.length,
+      };
+    }
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/otp/query', '/otp/query/', '/otp/', '/otp', '/otps/query', '/otps/'],
+      {
+        params: {
+          field,
+          value,
+          [field]: value,
+          query: value,
+          page,
+          limit,
+        },
+      }
+    );
+    return normalizePaginatedResponse<OTPRecord>(resData);
+  },
+
   // POST /otp/
   async createOTP(input: CreateOTPInput): Promise<CreateOTPResponse> {
     if (getStoredApiMode() === 'demo') {

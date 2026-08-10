@@ -7,8 +7,17 @@ import { toast } from 'sonner';
 import { Account, AccountRole, AccountStatus, CreateAccountInput } from '../types';
 import { accountsService } from '../services/accounts';
 import { DataTable } from '../components/common/DataTable';
-import { SearchBar } from '../components/common/SearchBar';
+import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+
+const ACCOUNT_SEARCH_FIELDS: SearchFieldOption[] = [
+  { key: 'email', label: 'Email' },
+  { key: 'id', label: 'Account ID' },
+  { key: 'name', label: 'Name' },
+  { key: 'handle', label: 'Handle' },
+  { key: 'role', label: 'Role' },
+  { key: 'status', label: 'Status' },
+];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
@@ -33,7 +42,8 @@ type AccountFormData = z.infer<typeof accountSchema>;
 
 export const AccountsPage: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState<string>('email');
+  const [searchValue, setSearchValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,14 +62,34 @@ export const AccountsPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await accountsService.listAccounts(p, l);
-      setAccounts(res.items);
-      setTotalCount(res.total);
+      if (searchValue.trim()) {
+        const res = await accountsService.queryAccounts(searchField, searchValue.trim(), p, l);
+        setAccounts(res.items);
+        setTotalCount(res.total);
+      } else {
+        const res = await accountsService.listAccounts(p, l);
+        setAccounts(res.items);
+        setTotalCount(res.total);
+      }
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch accounts'));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuerySubmit = () => {
+    setPage(1);
+    fetchAccounts(1, limit);
+  };
+
+  const handleResetSearch = () => {
+    setSearchValue('');
+    setPage(1);
+    accountsService.listAccounts(1, limit).then((res) => {
+      setAccounts(res.items);
+      setTotalCount(res.total);
+    });
   };
 
   useEffect(() => {
@@ -165,15 +195,7 @@ export const AccountsPage: React.FC = () => {
     }
   };
 
-  // Filter accounts
   const safeAccounts = Array.isArray(accounts) ? accounts : [];
-  const filtered = safeAccounts.filter(
-    (a) =>
-      String(a.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(a.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(a.handle ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(a.id ?? '').toLowerCase().includes(search.toLowerCase())
-  );
 
   const columns = [
     {
@@ -257,7 +279,7 @@ export const AccountsPage: React.FC = () => {
         action={
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchAccounts}
+              onClick={() => fetchAccounts(page, limit)}
               className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               title="Refresh table"
             >
@@ -274,14 +296,23 @@ export const AccountsPage: React.FC = () => {
         }
       />
 
-      {/* Filter and Search Bar */}
-      <div className="flex items-center justify-between gap-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by name, handle, or email..." />
+      {/* Query Search Bubble */}
+      <div className="w-full">
+        <SearchBubble
+          fields={ACCOUNT_SEARCH_FIELDS}
+          activeFieldKey={searchField}
+          onFieldChange={(key) => setSearchField(key)}
+          searchValue={searchValue}
+          onSearchValueChange={(val) => setSearchValue(val)}
+          onSearchSubmit={handleQuerySubmit}
+          onReset={handleResetSearch}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Data Table */}
       <DataTable
-        data={filtered}
+        data={safeAccounts}
         columns={columns}
         isLoading={isLoading}
         error={error}

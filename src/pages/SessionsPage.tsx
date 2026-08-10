@@ -4,8 +4,14 @@ import { toast } from 'sonner';
 import { SessionRecord } from '../types';
 import { sessionsService } from '../services/sessions';
 import { DataTable } from '../components/common/DataTable';
-import { SearchBar } from '../components/common/SearchBar';
+import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+
+const SESSION_SEARCH_FIELDS: SearchFieldOption[] = [
+  { key: 'account_id', label: 'Account ID' },
+  { key: 'id', label: 'Session ID' },
+  { key: 'ip_address', label: 'IP Address' },
+];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
@@ -15,7 +21,8 @@ import { getErrorMessage } from '../services/apiClient';
 
 export const SessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchField, setSearchField] = useState<string>('account_id');
+  const [searchValue, setSearchValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,14 +43,34 @@ export const SessionsPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await sessionsService.listSessions(p, l);
-      setSessions(res.items);
-      setTotalCount(res.total);
+      if (searchValue.trim()) {
+        const res = await sessionsService.querySessions(searchField, searchValue.trim(), p, l);
+        setSessions(res.items);
+        setTotalCount(res.total);
+      } else {
+        const res = await sessionsService.listSessions(p, l);
+        setSessions(res.items);
+        setTotalCount(res.total);
+      }
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch sessions'));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuerySubmit = () => {
+    setPage(1);
+    fetchSessions(1, limit);
+  };
+
+  const handleResetSearch = () => {
+    setSearchValue('');
+    setPage(1);
+    sessionsService.listSessions(1, limit).then((res) => {
+      setSessions(res.items);
+      setTotalCount(res.total);
+    });
   };
 
   useEffect(() => {
@@ -114,13 +141,6 @@ export const SessionsPage: React.FC = () => {
   };
 
   const safeSessions = Array.isArray(sessions) ? sessions : [];
-  const filtered = safeSessions.filter(
-    (s) =>
-      String(s.account_id ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(s.id ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(s.ip_address ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      String(s.user_agent ?? '').toLowerCase().includes(search.toLowerCase())
-  );
 
   const columns = [
     {
@@ -210,12 +230,22 @@ export const SessionsPage: React.FC = () => {
         }
       />
 
-      <div className="flex items-center justify-between gap-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search session ID, IP, or account ID..." />
+      {/* Query Search Bubble */}
+      <div className="w-full">
+        <SearchBubble
+          fields={SESSION_SEARCH_FIELDS}
+          activeFieldKey={searchField}
+          onFieldChange={(key) => setSearchField(key)}
+          searchValue={searchValue}
+          onSearchValueChange={(val) => setSearchValue(val)}
+          onSearchSubmit={handleQuerySubmit}
+          onReset={handleResetSearch}
+          isLoading={isLoading}
+        />
       </div>
 
       <DataTable
-        data={filtered}
+        data={safeSessions}
         columns={columns}
         isLoading={isLoading}
         error={error}
