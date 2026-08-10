@@ -13,6 +13,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
+import { UserAvatar } from '../components/common/UserAvatar';
 import { formatDate } from '../lib/utils';
 
 import { getErrorMessage } from '../services/apiClient';
@@ -175,13 +176,7 @@ export const AccountsPage: React.FC = () => {
       accessorKey: 'name' as const,
       cell: (item: Account) => (
         <div className="flex items-center gap-3">
-          {item.avatar_url ? (
-            <img src={item.avatar_url} alt={item.name} className="w-9 h-9 rounded-xl object-cover border border-gray-200 dark:border-gray-800" />
-          ) : (
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xs uppercase">
-              {item.name.charAt(0)}
-            </div>
-          )}
+          <UserAvatar src={item.avatar_url} name={item.name} size="md" />
           <div>
             <p className="font-semibold text-gray-900 dark:text-white leading-tight">{item.name}</p>
             <p className="text-xs text-gray-400 font-mono">@{item.handle}</p>

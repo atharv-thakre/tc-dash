@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { profileService } from '../services/profile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
+import { UserAvatar } from '../components/common/UserAvatar';
 import { PageHeader } from '../components/common/PageHeader';
 import { FormField } from '../components/common/FormField';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -90,17 +91,9 @@ export const ProfilePage: React.FC<{ onNavigate: (path: string) => void }> = ({ 
         {/* User Card */}
         <Card className="lg:col-span-1">
           <CardHeader className="text-center pb-2">
-            {account.avatar_url ? (
-              <img
-                src={account.avatar_url}
-                alt={account.name}
-                className="w-20 h-20 rounded-2xl mx-auto object-cover border-2 border-indigo-500/30 shadow-md mb-3"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold text-2xl flex items-center justify-center mx-auto shadow-md mb-3 uppercase">
-                {account.name.charAt(0)}
-              </div>
-            )}
+            <div className="flex justify-center mb-3">
+              <UserAvatar src={account.avatar_url} name={account.name} size="xl" />
+            </div>
             <CardTitle>{account.name}</CardTitle>
             <CardDescription className="font-mono text-xs text-indigo-500">@{account.handle}</CardDescription>
           </CardHeader>

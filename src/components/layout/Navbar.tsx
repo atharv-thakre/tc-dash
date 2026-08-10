@@ -3,6 +3,7 @@ import { Check, Database, Globe, Key, LogOut, Menu, Server, Settings, ShieldChec
 import { useApiConfig } from '../../contexts/ApiConfigContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Badge } from '../common/Badge';
+import { UserAvatar } from '../common/UserAvatar';
 import { Modal } from '../common/Modal';
 import { ThemeSwitcher } from '../common/ThemeSwitcher';
 
@@ -78,13 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
               >
-                {account.avatar_url ? (
-                  <img src={account.avatar_url} alt={account.name} className="w-7 h-7 rounded-lg object-cover" />
-                ) : (
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xs uppercase">
-                    {account.name.charAt(0)}
-                  </div>
-                )}
+                <UserAvatar src={account.avatar_url} name={account.name} size="sm" />
                 <div className="text-left hidden lg:block pr-1">
                   <p className="text-xs font-semibold leading-none text-slate-900 dark:text-zinc-100">{account.name}</p>
                   <p className="text-[10px] text-slate-400 dark:text-zinc-400 font-mono mt-0.5">{account.role}</p>
