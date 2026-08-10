@@ -19,6 +19,11 @@ export const OtpPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+
   // Dialog & Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isClearAllOpen, setIsClearAllOpen] = useState(false);
@@ -31,12 +36,13 @@ export const OtpPage: React.FC = () => {
   const [purpose, setPurpose] = useState<OTPPurpose>('login');
   const [expiresSeconds, setExpiresSeconds] = useState(600); // default 10 mins
 
-  const fetchRecords = async () => {
+  const fetchRecords = async (p = page, l = limit) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await otpService.listRecords();
-      setRecords(data);
+      const res = await otpService.listRecords(p, l);
+      setRecords(res.items);
+      setTotalCount(res.total);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch OTP records'));
     } finally {
@@ -45,8 +51,8 @@ export const OtpPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchRecords();
-  }, []);
+    fetchRecords(page, limit);
+  }, [page, limit]);
 
   const handleCreateOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +246,15 @@ export const OtpPage: React.FC = () => {
         error={error}
         emptyTitle="No OTP records found"
         emptyDescription="No one-time passcode verification challenges are registered."
-        onRefresh={fetchRecords}
+        onRefresh={() => fetchRecords(page, limit)}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        onPageChange={(newPage) => setPage(newPage)}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
         actions={(item) => (
           <button
             onClick={() => setRevokingItem(item)}

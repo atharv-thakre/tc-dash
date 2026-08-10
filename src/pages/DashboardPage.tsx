@@ -23,6 +23,7 @@ import { accountsService } from '../services/accounts';
 import { sessionsService } from '../services/sessions';
 import { otpService } from '../services/otp';
 import { oauthLinksService } from '../services/oauthLinks';
+import { configService } from '../services/config';
 import { formatDate } from '../lib/utils';
 
 export const DashboardPage: React.FC<{ onNavigate: (path: string) => void }> = ({ onNavigate }) => {
@@ -39,18 +40,28 @@ export const DashboardPage: React.FC<{ onNavigate: (path: string) => void }> = (
     setIsLoadingStats(true);
     try {
       if (isSuperAdmin) {
-        const [accs, sess, otps, links] = await Promise.all([
-          accountsService.listAccounts().catch(() => []),
-          sessionsService.listSessions().catch(() => []),
-          otpService.listRecords().catch(() => []),
-          oauthLinksService.listLinks().catch(() => []),
-        ]);
-        setStats({
-          accountsCount: accs.length,
-          activeSessionsCount: sess.length,
-          otpRecordsCount: otps.length,
-          oauthLinksCount: links.length,
-        });
+        try {
+          const counts = await configService.getCounts();
+          setStats({
+            accountsCount: counts.accounts,
+            activeSessionsCount: counts.sessions,
+            otpRecordsCount: counts.otp,
+            oauthLinksCount: counts.oauth,
+          });
+        } catch {
+          const [accs, sess, otps, links] = await Promise.all([
+            accountsService.listAccounts(1, 1).catch(() => ({ items: [], total: 0 })),
+            sessionsService.listSessions(1, 1).catch(() => ({ items: [], total: 0 })),
+            otpService.listRecords(1, 1).catch(() => ({ items: [], total: 0 })),
+            oauthLinksService.listLinks(1, 1).catch(() => ({ items: [], total: 0 })),
+          ]);
+          setStats({
+            accountsCount: accs.total ?? accs.items.length,
+            activeSessionsCount: sess.total ?? sess.items.length,
+            otpRecordsCount: otps.total ?? otps.items.length,
+            oauthLinksCount: links.total ?? links.items.length,
+          });
+        }
       }
     } finally {
       setIsLoadingStats(false);

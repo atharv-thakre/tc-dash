@@ -19,6 +19,11 @@ export const OAuthLinksPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+
   // Modal State
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [unlinkingItem, setUnlinkingItem] = useState<OAuthLink | null>(null);
@@ -29,12 +34,13 @@ export const OAuthLinksPage: React.FC = () => {
   const [provider, setProvider] = useState('google');
   const [providerUserId, setProviderUserId] = useState('');
 
-  const fetchLinks = async () => {
+  const fetchLinks = async (p = page, l = limit) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await oauthLinksService.listLinks();
-      setLinks(data);
+      const res = await oauthLinksService.listLinks(p, l);
+      setLinks(res.items);
+      setTotalCount(res.total);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch OAuth provider links'));
     } finally {
@@ -43,8 +49,8 @@ export const OAuthLinksPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLinks();
-  }, []);
+    fetchLinks(page, limit);
+  }, [page, limit]);
 
   const handleCreateLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,11 +106,20 @@ export const OAuthLinksPage: React.FC = () => {
 
   const columns = [
     {
-      header: 'Account ID',
+      header: 'Link ID / Account ID',
       sortable: true,
-      accessorKey: 'account_id' as const,
+      accessorKey: 'id' as const,
       cell: (item: OAuthLink) => (
-        <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white">{item.account_id}</span>
+        <div>
+          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white block">
+            {item.id || item.account_id}
+          </span>
+          {item.account_id && (
+            <span className="text-xs font-mono font-semibold text-indigo-500 block mt-0.5">
+              {item.account_id}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -172,7 +187,15 @@ export const OAuthLinksPage: React.FC = () => {
         error={error}
         emptyTitle="No OAuth provider links"
         emptyDescription="No social logins (Google/GitHub) have been linked to accounts yet."
-        onRefresh={fetchLinks}
+        onRefresh={() => fetchLinks(page, limit)}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        onPageChange={(newPage) => setPage(newPage)}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
         actions={(item) => (
           <button
             onClick={() => setUnlinkingItem(item)}

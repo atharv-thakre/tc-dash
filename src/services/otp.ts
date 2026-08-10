@@ -1,5 +1,12 @@
 import { CreateOTPInput, CreateOTPResponse, DeleteOTPInput, OTPRecord } from '../types';
-import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
+import {
+  apiClient,
+  getStoredApiMode,
+  normalizeArrayResponse,
+  normalizePaginatedResponse,
+  PaginatedResult,
+  requestWithFallback,
+} from './apiClient';
 import { INITIAL_OTP_RECORDS } from './mockData';
 
 const DEMO_OTP_RECORDS_KEY = 'tc_auth_demo_otp_records';
@@ -23,13 +30,22 @@ function saveDemoOTPRecords(records: OTPRecord[]) {
 
 export const otpService = {
   // GET /otp/
-  async listRecords(): Promise<OTPRecord[]> {
+  async listRecords(page: number = 1, limit: number = 10): Promise<PaginatedResult<OTPRecord>> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      return getDemoOTPRecords();
+      const all = getDemoOTPRecords();
+      const start = (page - 1) * limit;
+      return {
+        items: all.slice(start, start + limit),
+        total: all.length,
+      };
     }
-    const resData = await requestWithFallback<any>('get', ['/otp/', '/otp', '/otps/', '/otps']);
-    return normalizeArrayResponse<OTPRecord>(resData);
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/otp/', '/otp', '/otps/', '/otps'],
+      { params: { page, limit } }
+    );
+    return normalizePaginatedResponse<OTPRecord>(resData);
   },
 
   // POST /otp/

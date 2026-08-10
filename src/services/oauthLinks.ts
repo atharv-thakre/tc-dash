@@ -1,5 +1,12 @@
 import { CreateOAuthLinkInput, DeleteOAuthLinkInput, OAuthLink } from '../types';
-import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
+import {
+  apiClient,
+  getStoredApiMode,
+  normalizeArrayResponse,
+  normalizePaginatedResponse,
+  PaginatedResult,
+  requestWithFallback,
+} from './apiClient';
 import { INITIAL_OAUTH_LINKS } from './mockData';
 
 const DEMO_OAUTH_LINKS_KEY = 'tc_auth_demo_oauth_links';
@@ -23,19 +30,22 @@ function saveDemoOAuthLinks(links: OAuthLink[]) {
 
 export const oauthLinksService = {
   // GET /oauth/
-  async listLinks(): Promise<OAuthLink[]> {
+  async listLinks(page: number = 1, limit: number = 10): Promise<PaginatedResult<OAuthLink>> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      return getDemoOAuthLinks();
+      const all = getDemoOAuthLinks();
+      const start = (page - 1) * limit;
+      return {
+        items: all.slice(start, start + limit),
+        total: all.length,
+      };
     }
-    const resData = await requestWithFallback<any>('get', [
-      '/oauth/',
-      '/oauth',
-      '/oauth/link',
-      '/oauth/links',
-      '/oauth-links',
-    ]);
-    return normalizeArrayResponse<OAuthLink>(resData);
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/oauth/', '/oauth', '/oauth/link', '/oauth/links', '/oauth-links'],
+      { params: { page, limit } }
+    );
+    return normalizePaginatedResponse<OAuthLink>(resData);
   },
 
   // POST /oauth/

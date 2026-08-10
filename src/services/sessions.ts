@@ -1,5 +1,12 @@
 import { SessionRecord } from '../types';
-import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
+import {
+  apiClient,
+  getStoredApiMode,
+  normalizeArrayResponse,
+  normalizePaginatedResponse,
+  PaginatedResult,
+  requestWithFallback,
+} from './apiClient';
 import { INITIAL_SESSIONS } from './mockData';
 
 const DEMO_SESSIONS_KEY = 'tc_auth_demo_sessions';
@@ -23,19 +30,22 @@ function saveDemoSessions(sessions: SessionRecord[]) {
 
 export const sessionsService = {
   // GET /session/
-  async listSessions(): Promise<SessionRecord[]> {
+  async listSessions(page: number = 1, limit: number = 10): Promise<PaginatedResult<SessionRecord>> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      return getDemoSessions();
+      const all = getDemoSessions();
+      const start = (page - 1) * limit;
+      return {
+        items: all.slice(start, start + limit),
+        total: all.length,
+      };
     }
-    const resData = await requestWithFallback<any>('get', [
-      '/session/',
-      '/session',
-      '/sessions/',
-      '/sessions',
-      '/session/list',
-    ]);
-    return normalizeArrayResponse<SessionRecord>(resData);
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/session/', '/session', '/sessions/', '/sessions', '/session/list'],
+      { params: { page, limit } }
+    );
+    return normalizePaginatedResponse<SessionRecord>(resData);
   },
 
   // DELETE /session/

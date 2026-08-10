@@ -62,6 +62,28 @@ apiClient.interceptors.response.use(
   }
 );
 
+export interface PaginatedResult<T> {
+  items: T[];
+  total?: number;
+}
+
+/**
+ * Safely extracts an array and optional total count from various API response shapes.
+ */
+export function normalizePaginatedResponse<T>(data: any): PaginatedResult<T> {
+  const items = normalizeArrayResponse<T>(data);
+  let total: number | undefined = undefined;
+
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    if (typeof data.total === 'number') total = data.total;
+    else if (typeof data.total_count === 'number') total = data.total_count;
+    else if (typeof data.totalCount === 'number') total = data.totalCount;
+    else if (typeof data.count === 'number') total = data.count;
+  }
+
+  return { items, total };
+}
+
 /**
  * Safely extracts an array from various API response shapes (wrapped vs raw array).
  */

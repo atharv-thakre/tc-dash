@@ -37,18 +37,24 @@ export const AccountsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = async (p = page, l = limit) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await accountsService.listAccounts();
-      setAccounts(data);
+      const res = await accountsService.listAccounts(p, l);
+      setAccounts(res.items);
+      setTotalCount(res.total);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch accounts'));
     } finally {
@@ -57,8 +63,8 @@ export const AccountsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    fetchAccounts(page, limit);
+  }, [page, limit]);
 
   const {
     register,
@@ -171,6 +177,19 @@ export const AccountsPage: React.FC = () => {
 
   const columns = [
     {
+      header: 'ID / Account ID',
+      sortable: true,
+      accessorKey: 'id' as const,
+      cell: (item: Account) => (
+        <div>
+          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white block">{item.id}</span>
+          {(item as any).account_id && String((item as any).account_id) !== String(item.id) && (
+            <span className="text-[10px] font-mono text-indigo-500 block">Acc ID: {(item as any).account_id}</span>
+          )}
+        </div>
+      ),
+    },
+    {
       header: 'Account Identity',
       sortable: true,
       accessorKey: 'name' as const,
@@ -196,35 +215,30 @@ export const AccountsPage: React.FC = () => {
       ),
     },
     {
-      header: 'Role',
+      header: 'Role & Status',
       sortable: true,
       accessorKey: 'role' as const,
       cell: (item: Account) => (
-        <Badge
-          variant={item.role === 'superadmin' ? 'purple' : item.role === 'admin' ? 'info' : 'neutral'}
-        >
-          {item.role}
-        </Badge>
-      ),
-    },
-    {
-      header: 'Status',
-      sortable: true,
-      accessorKey: 'status' as const,
-      cell: (item: Account) => (
-        <Badge
-          variant={
-            item.status === 'active'
-              ? 'success'
-              : item.status === 'suspended'
-              ? 'danger'
-              : item.status === 'pending'
-              ? 'warning'
-              : 'neutral'
-          }
-        >
-          {item.status}
-        </Badge>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge
+            variant={item.role === 'superadmin' ? 'purple' : item.role === 'admin' ? 'info' : 'neutral'}
+          >
+            {item.role}
+          </Badge>
+          <Badge
+            variant={
+              item.status === 'active'
+                ? 'success'
+                : item.status === 'suspended'
+                ? 'danger'
+                : item.status === 'pending'
+                ? 'warning'
+                : 'neutral'
+            }
+          >
+            {item.status}
+          </Badge>
+        </div>
       ),
     },
     {
@@ -273,7 +287,15 @@ export const AccountsPage: React.FC = () => {
         error={error}
         emptyTitle="No accounts match criteria"
         emptyDescription="Try adjusting your search keywords or create a new user account."
-        onRefresh={fetchAccounts}
+        onRefresh={() => fetchAccounts(page, limit)}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        onPageChange={(newPage) => setPage(newPage)}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
         actions={(acc) => (
           <div className="flex items-center justify-end gap-1">
             <button

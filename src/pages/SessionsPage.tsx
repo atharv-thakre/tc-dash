@@ -19,6 +19,11 @@ export const SessionsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+
   // Dialog states
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [isClearAllOpen, setIsClearAllOpen] = useState(false);
@@ -27,12 +32,13 @@ export const SessionsPage: React.FC = () => {
   const [targetAccountId, setTargetAccountId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchSessions = async () => {
+  const fetchSessions = async (p = page, l = limit) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await sessionsService.listSessions();
-      setSessions(data);
+      const res = await sessionsService.listSessions(p, l);
+      setSessions(res.items);
+      setTotalCount(res.total);
     } catch (err: any) {
       setError(getErrorMessage(err, 'Failed to fetch sessions'));
     } finally {
@@ -41,8 +47,8 @@ export const SessionsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    fetchSessions(page, limit);
+  }, [page, limit]);
 
   const handleRevokeSingle = async () => {
     if (!revokingSessionId) return;
@@ -118,13 +124,13 @@ export const SessionsPage: React.FC = () => {
 
   const columns = [
     {
-      header: 'Session ID & Account',
+      header: 'Session ID / Account ID',
       sortable: true,
       accessorKey: 'id' as const,
       cell: (item: SessionRecord) => (
         <div>
           <span className="font-mono text-xs font-bold text-gray-900 dark:text-white block">{item.id}</span>
-          <span className="text-[11px] font-mono text-indigo-500">Account: {item.account_id}</span>
+          <span className="text-xs font-mono font-semibold text-indigo-500 block mt-0.5">{item.account_id}</span>
         </div>
       ),
     },
@@ -215,7 +221,15 @@ export const SessionsPage: React.FC = () => {
         error={error}
         emptyTitle="No active sessions"
         emptyDescription="There are currently no active session records in the system."
-        onRefresh={fetchSessions}
+        onRefresh={() => fetchSessions(page, limit)}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        onPageChange={(newPage) => setPage(newPage)}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
         actions={(item) => (
           <button
             onClick={() => setRevokingSessionId(item.id)}

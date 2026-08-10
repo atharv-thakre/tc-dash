@@ -1,16 +1,32 @@
 import { Account, CreateAccountInput, PatchAccountInput } from '../types';
-import { apiClient, getStoredApiMode, normalizeArrayResponse, requestWithFallback } from './apiClient';
+import {
+  apiClient,
+  getStoredApiMode,
+  normalizeArrayResponse,
+  normalizePaginatedResponse,
+  PaginatedResult,
+  requestWithFallback,
+} from './apiClient';
 import { getDemoAccounts, saveDemoAccounts } from './auth';
 
 export const accountsService = {
   // GET /account/
-  async listAccounts(): Promise<Account[]> {
+  async listAccounts(page: number = 1, limit: number = 10): Promise<PaginatedResult<Account>> {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      return getDemoAccounts();
+      const all = getDemoAccounts();
+      const start = (page - 1) * limit;
+      return {
+        items: all.slice(start, start + limit),
+        total: all.length,
+      };
     }
-    const resData = await requestWithFallback<any>('get', ['/account/', '/account', '/accounts/', '/accounts']);
-    return normalizeArrayResponse<Account>(resData);
+    const resData = await requestWithFallback<any>(
+      'get',
+      ['/account/', '/account', '/accounts/', '/accounts'],
+      { params: { page, limit } }
+    );
+    return normalizePaginatedResponse<Account>(resData);
   },
 
   // POST /account/
