@@ -88,16 +88,17 @@ export const otpService = {
 
   // POST /otp/
   async createOTP(input: CreateOTPInput): Promise<CreateOTPResponse> {
+    const expirySeconds = Number(input.expiry ?? input.expires) || 300;
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 400));
       const records = getDemoOTPRecords();
       const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const expires_at = new Date(Date.now() + (input.expires || 300) * 1000).toISOString();
+      const expires_at = new Date(Date.now() + expirySeconds * 1000).toISOString();
 
       const newRecord: OTPRecord = {
         id: `otp_${Date.now()}`,
         identifier: input.identifier,
-        purpose: input.purpose,
+        purpose: input.purpose || 'login',
         code_hash: `$2a$12$demo_hash_${generatedCode}`,
         attempts: 0,
         expires_at,
@@ -112,13 +113,18 @@ export const otpService = {
         expires_at,
       };
     }
+    // Matching Pydantic CreateOTP schema: identifier: str, purpose: "login"|"signup"|"reset", expiry: int = 300
     const payload = {
       identifier: input.identifier,
-      purpose: input.purpose,
-      expires: Number(input.expires) || 300,
+      purpose: input.purpose || 'login',
+      expiry: expirySeconds,
     };
     const resData = await requestWithFallback<any>('post', ['/otp/', '/otp', '/otps/'], payload);
-    return resData?.data || resData;
+    const data = resData?.data || resData || {};
+    return {
+      otp: String(data.otp || data.code || ''),
+      expires_at: data.expires_at ?? data.expires ?? Math.floor(Date.now() / 1000) + expirySeconds,
+    };
   },
 
   // DELETE /otp/

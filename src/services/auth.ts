@@ -58,18 +58,23 @@ function extractAuthResponse(resData: any): AuthResponse {
 
 export const authService = {
   // POST /send/email/otp/{purpose}
-  async sendEmailOTP(purpose: OTPPurpose, input: SendEmailOTPInput): Promise<SendEmailOTPResponse> {
+  async sendEmailOTP(purpose: OTPPurpose = 'login', input: SendEmailOTPInput): Promise<SendEmailOTPResponse> {
+    const validPurpose = purpose || 'login';
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      const expires_at = new Date(Date.now() + 1000 * 60 * 10).toISOString();
+      const expires_at = Math.floor(Date.now() / 1000) + 600;
       return { expires_at };
     }
     const resData = await requestWithFallback<any>('post', [
-      `/send/email/otp/${purpose}`,
-      `/send/email/otp/${purpose}/`,
-      `/otp/send/${purpose}`,
+      `/send/email/otp/${validPurpose}`,
+      `/send/email/otp/${validPurpose}/`,
+      `/otp/send/${validPurpose}`,
     ], input);
-    return resData?.data || resData;
+    const data = resData?.data || resData || {};
+    if (typeof data === 'object' && data !== null && 'expires_at' in data) {
+      return { expires_at: data.expires_at };
+    }
+    return { expires_at: data };
   },
 
   // POST /signup/otp

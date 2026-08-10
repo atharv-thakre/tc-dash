@@ -1,6 +1,6 @@
 export type AccountRole = 'superadmin' | 'admin' | 'user';
 export type AccountStatus = 'active' | 'suspended' | 'pending' | 'inactive';
-export type OTPPurpose = 'login' | 'signup' | 'reset' | 'verify_email';
+export type OTPPurpose = 'login' | 'signup' | 'reset';
 
 export interface Account {
   id: string;
@@ -52,13 +52,13 @@ export interface OTPRecord {
   purpose: OTPPurpose | string;
   code_hash?: string;
   attempts: number;
-  expires_at: string;
+  expires_at: string | number;
   created_at: string;
 }
 
 export interface CreateOTPResponse {
   otp: string;
-  expires_at: string;
+  expires_at: string | number;
 }
 
 export interface SessionRecord {
@@ -106,7 +106,7 @@ export interface SendEmailOTPInput {
 }
 
 export interface SendEmailOTPResponse {
-  expires_at: string;
+  expires_at: string | number;
 }
 
 export interface LoginPasswordInput {
@@ -178,8 +178,9 @@ export interface DeleteOAuthLinkInput {
 
 export interface CreateOTPInput {
   identifier: string;
-  purpose: string;
-  expires: number; // in seconds
+  purpose?: OTPPurpose | string;
+  expiry?: number; // in seconds (default 300)
+  expires?: number; // optional alias
 }
 
 export interface DeleteOTPInput {

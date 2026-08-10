@@ -92,7 +92,7 @@ export const OtpPage: React.FC = () => {
       const res = await otpService.createOTP({
         identifier,
         purpose,
-        expires: expiresSeconds,
+        expiry: expiresSeconds,
       });
       setCreatedOTPResult(res);
       toast.success('OTP code generated successfully');
@@ -327,10 +327,9 @@ export const OtpPage: React.FC = () => {
                 onChange={(e) => setPurpose(e.target.value as OTPPurpose)}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
               >
-                <option value="login">Login Verification</option>
-                <option value="signup">Signup Verification</option>
-                <option value="reset">Password Reset</option>
-                <option value="verify_email">Verify Email</option>
+                <option value="login">login</option>
+                <option value="signup">signup</option>
+                <option value="reset">reset</option>
               </select>
             </FormField>
 
