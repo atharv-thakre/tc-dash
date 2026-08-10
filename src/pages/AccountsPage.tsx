@@ -13,10 +13,10 @@ import { Modal } from '../components/common/Modal';
 const ACCOUNT_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'email', label: 'Email' },
   { key: 'id', label: 'Account ID' },
+  { key: 'uid', label: 'UID' },
+  { key: 'phone', label: 'Phone' },
   { key: 'name', label: 'Name' },
   { key: 'handle', label: 'Handle' },
-  { key: 'role', label: 'Role' },
-  { key: 'status', label: 'Status' },
 ];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';

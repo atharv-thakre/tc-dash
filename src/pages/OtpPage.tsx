@@ -9,8 +9,6 @@ import { Modal } from '../components/common/Modal';
 
 const OTP_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'identifier', label: 'Identifier' },
-  { key: 'id', label: 'OTP ID' },
-  { key: 'purpose', label: 'Purpose' },
 ];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';

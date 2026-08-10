@@ -8,10 +8,8 @@ import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubb
 import { Modal } from '../components/common/Modal';
 
 const OAUTH_SEARCH_FIELDS: SearchFieldOption[] = [
-  { key: 'account_id', label: 'Account ID' },
-  { key: 'provider_user_id', label: 'Provider User ID' },
-  { key: 'provider', label: 'Provider' },
-  { key: 'id', label: 'Link ID' },
+  { key: 'id', label: 'ID' },
+  { key: 'provider_id', label: 'Provider ID' },
 ];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
@@ -22,7 +20,7 @@ import { getErrorMessage } from '../services/apiClient';
 
 export const OAuthLinksPage: React.FC = () => {
   const [links, setLinks] = useState<OAuthLink[]>([]);
-  const [searchField, setSearchField] = useState<string>('account_id');
+  const [searchField, setSearchField] = useState<string>('id');
   const [searchValue, setSearchValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
