@@ -138,6 +138,19 @@ export interface UpdatePasswordInput {
   password: string;
 }
 
+export interface ForgotPasswordInput {
+  email: string;
+  otp: string;
+}
+
+export interface PatchMeInput {
+  name?: string;
+  email?: string;
+  handle?: string;
+  avatar_url?: string | null;
+  phone?: string | null;
+}
+
 export interface CreateAccountInput {
   name: string;
   email: string;

@@ -4,8 +4,10 @@ import { authService } from '../services/auth';
 import { profileService } from '../services/profile';
 import {
   Account,
+  ForgotPasswordInput,
   LoginOTPInput,
   LoginPasswordInput,
+  PatchMeInput,
   SessionInfo,
   SignupOTPInput,
   SignupPasswordInput,
@@ -24,6 +26,8 @@ interface AuthContextType {
   loginOTP: (input: LoginOTPInput) => Promise<void>;
   signupPassword: (input: SignupPasswordInput) => Promise<void>;
   signupOTP: (input: SignupOTPInput) => Promise<void>;
+  forgotPassword: (input: ForgotPasswordInput) => Promise<void>;
+  patchMe: (input: PatchMeInput) => Promise<void>;
   loginOAuth: (provider: 'google' | 'github') => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
@@ -131,6 +135,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await fetchMe();
   };
 
+  const forgotPassword = async (input: ForgotPasswordInput) => {
+    const res = await authService.forgotPassword(input);
+    setToken(res.access_token);
+    setAccount(res.account);
+    await fetchMe();
+  };
+
+  const patchMe = async (input: PatchMeInput) => {
+    await profileService.patchMe(input);
+    await fetchMe();
+  };
+
   const loginOAuth = async (provider: 'google' | 'github') => {
     const res = await authService.loginOAuthDemo(provider);
     setToken(res.access_token);
@@ -175,6 +191,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginOTP,
         signupPassword,
         signupOTP,
+        forgotPassword,
+        patchMe,
         loginOAuth,
         logout,
         logoutAll,

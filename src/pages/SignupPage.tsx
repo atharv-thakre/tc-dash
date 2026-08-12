@@ -317,8 +317,8 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
                     type="text"
                     value={otpCode || ''}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="6-digit code"
-                    className="w-full text-center font-mono tracking-widest text-base py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white"
+                    placeholder="Enter 6-digit code"
+                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
                   />
                 </FormField>
 

@@ -1,5 +1,6 @@
 import {
   AuthResponse,
+  ForgotPasswordInput,
   LoginOTPInput,
   LoginPasswordInput,
   OTPPurpose,
@@ -238,6 +239,36 @@ export const authService = {
       '/login/',
     ], input);
 
+    const authRes = extractAuthResponse(resData);
+    if (authRes.access_token) {
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
+    }
+    return authRes;
+  },
+
+  // POST /forgot/password
+  async forgotPassword(input: ForgotPasswordInput): Promise<AuthResponse> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      const accounts = getDemoAccounts();
+      let acc = accounts.find((a: any) => a.email.toLowerCase() === input.email.toLowerCase());
+      if (!acc) {
+        acc = accounts[0];
+      }
+      const response: AuthResponse = {
+        access_token: `tc_demo_token_${acc.id}_${Date.now()}`,
+        token_type: 'Bearer',
+        account: acc,
+      };
+      localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
+      return response;
+    }
+    const resData = await requestWithFallback<any>('post', [
+      '/forgot/password',
+      '/forgot/password/',
+      '/forgot-password',
+      '/auth/forgot-password',
+    ], input);
     const authRes = extractAuthResponse(resData);
     if (authRes.access_token) {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);

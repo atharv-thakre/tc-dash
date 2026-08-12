@@ -34,14 +34,21 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ onNavigate }) => {
-  const { loginPassword, loginOTP, loginOAuth } = useAuth();
+  const { loginPassword, loginOTP, loginOAuth, forgotPassword } = useAuth();
   const { apiMode, setApiMode, baseUrl, setBaseUrl } = useApiConfig();
 
-  const [tab, setTab] = useState<'password' | 'otp'>('password');
+  const [tab, setTab] = useState<'password' | 'otp' | 'reset'>('password');
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+  // Forgot / Reset Password State
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isTestingPulse, setIsTestingPulse] = useState(false);
   const [pulseResult, setPulseResult] = useState<PulseResponse | null>(null);
@@ -103,6 +110,42 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       onNavigate('/dashboard');
     } catch (err: any) {
       toast.error(getErrorMessage(err, 'Invalid or expired OTP code.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestResetOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      await authService.sendEmailOTP('reset', { email: forgotEmail });
+      setResetSent(true);
+      toast.success('Reset OTP sent to email (purpose="reset").');
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Failed to send reset OTP.'));
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotOtp) {
+      toast.error('Please enter the reset OTP code');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await forgotPassword({ email: forgotEmail, otp: forgotOtp });
+      toast.success('Password reset & logged in successfully via POST /forgot/password');
+      onNavigate('/dashboard');
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Failed to reset password. Check OTP code.'));
     } finally {
       setIsLoading(false);
     }
@@ -372,7 +415,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
           </div>
         </div>
 
-        {/* Tab Switcher: Password vs OTP */}
+        {/* Tab Switcher: Password vs OTP vs Reset */}
         <div className="flex p-1 mb-5 rounded-2xl bg-zinc-950 border border-zinc-800">
           <button
             type="button"
@@ -383,7 +426,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Password Login
+            Password
           </button>
           <button
             type="button"
@@ -395,6 +438,17 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
             }`}
           >
             Email OTP
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('reset')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+              tab === 'reset'
+                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Reset
           </button>
         </div>
 
@@ -440,7 +494,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               )}
             </button>
           </form>
-        ) : (
+        ) : tab === 'otp' ? (
           /* OTP Login Form */
           <div className="space-y-4">
             {!otpSent ? (
@@ -487,17 +541,30 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                   </button>
                 </div>
 
-                <FormField label="Enter OTP Code" required>
+                <FormField label="Enter Verification Code" required>
                   <input
                     type="text"
                     value={otpCode || ''}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="123456"
+                    placeholder="Enter 6-digit code"
                     required
                     maxLength={12}
-                    className="w-full text-center tracking-widest text-lg font-mono py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500/50"
+                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
                   />
                 </FormField>
+
+                {apiMode === 'demo' && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
+                    <span>Demo Mode: Any code works</span>
+                    <button
+                      type="button"
+                      onClick={() => setOtpCode('123456')}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                    >
+                      Fill Demo Code (123456)
+                    </button>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -508,6 +575,89 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     'Verify & Sign In'
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        ) : (
+          /* Forgot Password / Reset OTP Form */
+          <div className="space-y-4">
+            {!resetSent ? (
+              <form onSubmit={handleRequestResetOtp} className="space-y-4">
+                <FormField label="Email Address" required hint="We will send a password reset OTP (purpose='reset').">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                </FormField>
+
+                <button
+                  type="submit"
+                  disabled={isSendingReset}
+                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isSendingReset ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Send Reset OTP (`purpose=reset`)'
+                  )}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
+                  <span>Reset OTP sent to <strong className="text-white">{forgotEmail}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setResetSent(false)}
+                    className="underline text-[11px] font-semibold hover:text-white"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <FormField label="Enter Reset Code" required hint="Code for POST /forgot/password">
+                  <input
+                    type="text"
+                    value={forgotOtp}
+                    onChange={(e) => setForgotOtp(e.target.value)}
+                    placeholder="Enter 6-digit code"
+                    required
+                    maxLength={12}
+                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </FormField>
+
+                {apiMode === 'demo' && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
+                    <span>Demo Mode: Any code works</span>
+                    <button
+                      type="button"
+                      onClick={() => setForgotOtp('123456')}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                    >
+                      Fill Demo Code (123456)
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Reset & Sign In (`POST /forgot/password`)'
                   )}
                 </button>
               </form>

@@ -1,6 +1,6 @@
-import { MeResponse, UpdatePasswordInput } from '../types';
+import { MeResponse, PatchMeInput, UpdatePasswordInput } from '../types';
 import { apiClient, getStoredApiMode, LOCAL_STORAGE_TOKEN_KEY, requestWithFallback } from './apiClient';
-import { getDemoAccounts } from './auth';
+import { getDemoAccounts, saveDemoAccounts } from './auth';
 
 export const profileService = {
   // GET /me
@@ -109,5 +109,34 @@ export const profileService = {
       '/account/password',
     ], input);
     return resData?.data || resData;
+  },
+
+  // PATCH /me
+  async patchMe(input: PatchMeInput): Promise<void> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+      const accounts = getDemoAccounts();
+      let matchedIdx = accounts.findIndex((a: any) => token && token.includes(a.id));
+      if (matchedIdx === -1) matchedIdx = 0;
+
+      const updated = { ...accounts[matchedIdx] };
+      if (input.name !== undefined) updated.name = input.name;
+      if (input.email !== undefined) updated.email = input.email;
+      if (input.handle !== undefined) updated.handle = input.handle;
+      if (input.avatar_url !== undefined) updated.avatar_url = input.avatar_url;
+      if (input.phone !== undefined) updated.phone = input.phone;
+      updated.updated_at = new Date().toISOString();
+
+      accounts[matchedIdx] = updated;
+      saveDemoAccounts(accounts);
+      return;
+    }
+
+    await requestWithFallback<any>('patch', [
+      '/me',
+      '/me/',
+      '/user/me',
+    ], input);
   },
 };

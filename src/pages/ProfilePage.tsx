@@ -27,10 +27,47 @@ const updatePasswordSchema = z.object({
 type UpdatePasswordFormData = z.infer<typeof updatePasswordSchema>;
 
 export const ProfilePage: React.FC<{ onNavigate: (path: string) => void }> = ({ onNavigate }) => {
-  const { account, session, payload, logout, logoutAll, isSuperAdmin } = useAuth();
+  const { account, session, payload, logout, logoutAll, isSuperAdmin, patchMe } = useAuth();
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isLogoutAllDialogOpen, setIsLogoutAllDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Profile Edit State
+  const [profileName, setProfileName] = useState(account?.name || '');
+  const [profileEmail, setProfileEmail] = useState(account?.email || '');
+  const [profileHandle, setProfileHandle] = useState(account?.handle || '');
+  const [profilePhone, setProfilePhone] = useState(account?.phone || '');
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState(account?.avatar_url || '');
+
+  React.useEffect(() => {
+    if (account) {
+      setProfileName(account.name || '');
+      setProfileEmail(account.email || '');
+      setProfileHandle(account.handle || '');
+      setProfilePhone(account.phone || '');
+      setProfileAvatarUrl(account.avatar_url || '');
+    }
+  }, [account]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingProfile(true);
+    try {
+      await patchMe({
+        name: profileName || undefined,
+        email: profileEmail || undefined,
+        handle: profileHandle || undefined,
+        phone: profilePhone || null,
+        avatar_url: profileAvatarUrl || null,
+      });
+      toast.success('Profile updated via PATCH /me');
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Failed to update profile via PATCH /me'));
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
 
   const {
     register,
@@ -180,6 +217,82 @@ export const ProfilePage: React.FC<{ onNavigate: (path: string) => void }> = ({ 
                   <ProviderButton provider="github" label="Connect GitHub Account" onSuccessNavigate={() => onNavigate('/profile')} />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Edit Profile Details (PATCH /me) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-indigo-500" />
+                Update Profile Info (`PATCH /me`)
+              </CardTitle>
+              <CardDescription>Update your personal information including name, email, handle, avatar URL, and phone number.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Full Name">
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="Name"
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                    />
+                  </FormField>
+
+                  <FormField label="Handle / Username">
+                    <input
+                      type="text"
+                      value={profileHandle}
+                      onChange={(e) => setProfileHandle(e.target.value)}
+                      placeholder="handle"
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono text-xs"
+                    />
+                  </FormField>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Email Address">
+                    <input
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                    />
+                  </FormField>
+
+                  <FormField label="Phone Number">
+                    <input
+                      type="text"
+                      value={profilePhone}
+                      onChange={(e) => setProfilePhone(e.target.value)}
+                      placeholder="+1234567890"
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="Avatar URL">
+                  <input
+                    type="url"
+                    value={profileAvatarUrl}
+                    onChange={(e) => setProfileAvatarUrl(e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                  />
+                </FormField>
+
+                <button
+                  type="submit"
+                  disabled={isUpdatingProfile}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  {isUpdatingProfile ? 'Saving Changes...' : 'Save Profile (`PATCH /me`)'}
+                </button>
+              </form>
             </CardContent>
           </Card>
 
