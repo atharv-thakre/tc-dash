@@ -31,6 +31,7 @@ const GoogleIcon = () => (
 const OAUTH_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'id', label: 'ID' },
   { key: 'provider_id', label: 'Provider ID' },
+  { key: 'account_id', label: 'Account ID' },
 ];
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Badge } from '../components/common/Badge';
@@ -317,7 +318,7 @@ export const OAuthLinksPage: React.FC = () => {
           <FormField label="Target Account ID" required hint="e.g. acc_01h8x8k9z01">
             <input
               type="text"
-              value={accountId}
+              value={accountId || ''}
               onChange={(e) => setAccountId(e.target.value)}
               placeholder="acc_01h8x8k9z01"
               required
@@ -327,7 +328,7 @@ export const OAuthLinksPage: React.FC = () => {
 
           <FormField label="Provider Name" required>
             <select
-              value={provider}
+              value={provider || 'google'}
               onChange={(e) => setProvider(e.target.value)}
               className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
             >
@@ -339,7 +340,7 @@ export const OAuthLinksPage: React.FC = () => {
           <FormField label="Provider User ID" required hint="Unique sub/ID string from Google or GitHub">
             <input
               type="text"
-              value={providerUserId}
+              value={providerUserId || ''}
               onChange={(e) => setProviderUserId(e.target.value)}
               placeholder="google_108239102830"
               required

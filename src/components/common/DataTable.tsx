@@ -219,7 +219,7 @@ export function DataTable<T extends { id?: string | number }>({
               <div className="flex items-center gap-1.5 ml-2">
                 <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-medium">Per page:</span>
                 <select
-                  value={currentLimit}
+                  value={currentLimit || 10}
                   onChange={(e) => onLimitChange(Number(e.target.value))}
                   className="px-2 py-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md text-xs text-slate-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >

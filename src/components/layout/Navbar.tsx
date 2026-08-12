@@ -199,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
               <Server className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                value={inputUrl}
+                value={inputUrl || ''}
                 onChange={(e) => setInputUrl(e.target.value)}
                 placeholder="/tc-auth or https://app.totalchaos.online/tc-auth"
                 className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50"

@@ -67,7 +67,7 @@ export const SearchBubble: React.FC<SearchBubbleProps> = ({
       <div className="relative flex-1 flex items-center min-w-0">
         <input
           type="text"
-          value={searchValue}
+          value={searchValue || ''}
           onChange={(e) => onSearchValueChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={`Query by ${currentField.label.toLowerCase()}...`}

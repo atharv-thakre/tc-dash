@@ -8,13 +8,14 @@ export const profileService = {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
       const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
       const accounts = getDemoAccounts();
 
-      let matchedAccount = accounts[0]; // Default to superadmin for demo
-      if (token) {
-        const found = accounts.find((a: any) => token.includes(a.id));
-        if (found) matchedAccount = found;
-      }
+      let matchedAccount = accounts[0]; // Default to superadmin for demo token
+      const found = accounts.find((a: any) => token.includes(a.id));
+      if (found) matchedAccount = found;
 
       return {
         account: matchedAccount,
@@ -35,7 +36,7 @@ export const profileService = {
       };
     }
 
-    const resData = await requestWithFallback<any>('get', ['/me', '/me/', '/auth/me', '/user/me']);
+    const resData = await requestWithFallback<any>('get', ['/me', '/me/', '/user/me']);
     const payload = resData?.data || resData || {};
 
     if (payload.account) {

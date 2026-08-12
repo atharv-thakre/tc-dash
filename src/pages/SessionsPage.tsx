@@ -310,7 +310,7 @@ export const SessionsPage: React.FC = () => {
           <FormField label="Account ID" required hint="e.g. acc_01h8x8k9z01">
             <input
               type="text"
-              value={targetAccountId}
+              value={targetAccountId || ''}
               onChange={(e) => setTargetAccountId(e.target.value)}
               placeholder="acc_01h8x8k9z01"
               required

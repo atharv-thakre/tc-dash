@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+  Activity,
+  AlertCircle,
   ArrowRight,
   Check,
   Globe,
@@ -12,13 +14,14 @@ import {
   Send,
   Server,
   Settings2,
-  ShieldCheck,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useApiConfig } from '../contexts/ApiConfigContext';
 import { authService } from '../services/auth';
+import { configService, PulseResponse } from '../services/config';
 import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
 import { getErrorMessage } from '../services/apiClient';
@@ -31,7 +34,7 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ onNavigate }) => {
-  const { loginPassword, loginOTP } = useAuth();
+  const { loginPassword, loginOTP, loginOAuth } = useAuth();
   const { apiMode, setApiMode, baseUrl, setBaseUrl } = useApiConfig();
 
   const [tab, setTab] = useState<'password' | 'otp'>('password');
@@ -40,6 +43,9 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTestingPulse, setIsTestingPulse] = useState(false);
+  const [pulseResult, setPulseResult] = useState<PulseResponse | null>(null);
+  const [pulseError, setPulseError] = useState<string | null>(null);
 
   // Server Endpoint Settings
   const [showServerSettings, setShowServerSettings] = useState(false);
@@ -60,7 +66,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       toast.success('Signed in successfully');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Failed to sign in. Please check credentials.'));
+      toast.error(getErrorMessage(err, 'Failed to sign in. Please check credentials or server connection.'));
     } finally {
       setIsLoading(false);
     }
@@ -102,6 +108,36 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
     }
   };
 
+  const handleTestPulse = async () => {
+    setIsTestingPulse(true);
+    setPulseResult(null);
+    setPulseError(null);
+    try {
+      const res = await configService.testPulse();
+      setPulseResult(res);
+      toast.success(`Server Pulse OK: status=${res.status}, state=${res.state}`);
+    } catch (err: any) {
+      const msg = getErrorMessage(err, 'Pulse connection check failed.');
+      setPulseError(msg);
+    } finally {
+      setIsTestingPulse(false);
+    }
+  };
+
+  const handleQuickDemoLogin = async () => {
+    setIsLoading(true);
+    try {
+      setApiMode('demo');
+      await loginPassword({ identifier: 'admin@tcauth.dev', password: 'demo' });
+      toast.success('Entered Demo Mode as Superadmin (Atharv Thakre)');
+      onNavigate('/dashboard');
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, 'Failed to enter demo mode'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSaveUrl = () => {
     setBaseUrl(inputUrl);
     toast.success(`Server URL updated: ${inputUrl || '/tc-auth'}`);
@@ -112,13 +148,13 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/25 mb-3 border border-indigo-400/30">
-            <KeyRound className="w-7 h-7" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 mb-3 shadow-inner">
+            <KeyRound className="w-6 h-6" />
           </div>
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-2xl font-black tracking-tight text-white">tc-auth</h1>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-              v1.0
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700/80">
+              v1.3
             </span>
           </div>
           <p className="text-xs text-zinc-400 mt-1">
@@ -126,44 +162,46 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
           </p>
         </div>
 
-        {/* Backend API Mode & Endpoint Selector */}
-        <div className="mb-6 p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800/80">
-          <div className="flex items-center justify-between mb-2">
+        {/* Backend API Mode & Pulse Connection Status */}
+        <div className="mb-6 p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 space-y-3">
+          <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Server className="w-3.5 h-3.5 text-indigo-400" />
-              API Server Mode
+              API SERVER MODE
             </span>
             <button
               type="button"
               onClick={() => setShowServerSettings(!showServerSettings)}
-              className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+              className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors cursor-pointer"
             >
-              <Settings2 className="w-3 h-3" />
-              {showServerSettings ? 'Hide URL Config' : 'Configure URL'}
+              <Settings2 className="w-3.5 h-3.5" />
+              {showServerSettings
+                ? apiMode === 'demo' ? 'Hide Access' : 'Hide URL'
+                : apiMode === 'demo' ? 'Configure Access' : 'Configure URL'}
             </button>
           </div>
 
           {/* Mode Switcher Buttons */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => setApiMode('demo')}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 apiMode === 'demo'
-                  ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300 ring-1 ring-indigo-500/30'
+                  ? 'border-indigo-500/80 bg-indigo-500/10 text-indigo-300 ring-1 ring-indigo-500/30'
                   : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              Demo Mock Mode
+              Demo Mock
             </button>
 
             <button
               type="button"
               onClick={() => setApiMode('live')}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 apiMode === 'live'
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
+                  ? 'border-emerald-500/80 bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
                   : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
               }`}
             >
@@ -172,60 +210,147 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
             </button>
           </div>
 
-          {/* Live Server URL Input */}
-          {(showServerSettings || apiMode === 'live') && (
-            <div className="mt-3 pt-3 border-t border-zinc-800/80 space-y-2 animate-in fade-in duration-150">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                Backend Base Path / URL
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Globe className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-zinc-500" />
-                  <input
-                    type="text"
-                    value={inputUrl}
-                    onChange={(e) => setInputUrl(e.target.value)}
-                    placeholder="/tc-auth"
-                    className="w-full pl-8 pr-2 py-1.5 text-xs bg-zinc-900 border border-zinc-700/80 rounded-xl text-zinc-100 font-mono focus:ring-2 focus:ring-indigo-500/50"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSaveUrl}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors"
-                >
-                  Set
-                </button>
-              </div>
+          {/* Server Connection Pulse Button */}
+          <div className="pt-2 border-t border-zinc-800/60">
+            <button
+              type="button"
+              onClick={handleTestPulse}
+              disabled={isTestingPulse}
+              className="w-full py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 text-[11px] font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Activity className={`w-3.5 h-3.5 text-indigo-400 ${isTestingPulse ? 'animate-spin' : ''}`} />
+              {isTestingPulse ? 'Checking Pulse...' : 'Test Server Connection (/config/pulse)'}
+            </button>
+          </div>
 
-              {/* Quick Presets */}
-              <div className="flex flex-wrap gap-1.5 items-center text-[10px] text-zinc-400 pt-1">
-                <span className="text-zinc-500 font-medium">Quick Presets:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputUrl('/tc-auth');
-                    setBaseUrl('/tc-auth');
-                    setApiMode('live');
-                    toast.success('Set base URL to /tc-auth');
-                  }}
-                  className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 font-mono text-zinc-300 border border-zinc-700/60"
-                >
-                  /tc-auth
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputUrl('https://app.totalchaos.online/tc-auth');
-                    setBaseUrl('https://app.totalchaos.online/tc-auth');
-                    setApiMode('live');
-                    toast.success('Set base URL to https://app.totalchaos.online/tc-auth');
-                  }}
-                  className="px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30"
-                >
-                  https://app.totalchaos.online/tc-auth
-                </button>
+          {pulseResult && (
+            <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs font-mono space-y-2 shadow-inner animate-in fade-in duration-150">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${apiMode === 'demo' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]'}`} />
+                  <span className="font-bold text-zinc-100 text-xs flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" /> Pulse: {pulseResult.status}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-md bg-zinc-800/90 text-zinc-300 text-[10px] font-semibold tracking-wider uppercase border border-zinc-700/70">
+                  {pulseResult.state}
+                </span>
               </div>
+              {pulseResult.response && (
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80 text-xs">
+                  <span className="text-zinc-400 font-sans font-medium">Response</span>
+                  <span className="text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold">
+                    {pulseResult.response}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-1 text-[10px] text-zinc-500 font-mono">
+                <span>System Time</span>
+                <span className="text-zinc-400">{pulseResult.system_time}</span>
+              </div>
+            </div>
+          )}
+
+          {pulseError && (
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/50 text-xs space-y-1.5 shadow-inner animate-in fade-in duration-150">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-rose-300">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>Pulse Connection Failed</span>
+              </div>
+              <div className="text-[11px] text-rose-200/90 font-sans leading-relaxed">{pulseError}</div>
+            </div>
+          )}
+
+          {/* Lower Toggleable Section: Demo Instant Access OR Live Backend Base URL */}
+          {showServerSettings && (
+            <div className="pt-3 border-t border-zinc-800/80 space-y-2.5 animate-in fade-in duration-150">
+              {apiMode === 'demo' ? (
+                /* Demo Mode Instant Access Section */
+                <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2.5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      Demo Mode Active
+                    </span>
+                    <span className="text-[10px] font-semibold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20 uppercase tracking-wider">
+                      Instant Access
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Signed out or testing? Jump straight back into full Superadmin control panel.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleQuickDemoLogin}
+                    disabled={isLoading}
+                    className="w-full py-2.5 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer border border-zinc-700/80 shadow-sm active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    Enter as SuperAdmin
+                  </button>
+                </div>
+              ) : (
+                /* Live Server Mode Base URL Settings */
+                <>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                    BACKEND BASE URL PATH
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Globe className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
+                      <input
+                        type="text"
+                        value={inputUrl || ''}
+                        onChange={(e) => setInputUrl(e.target.value)}
+                        placeholder="/tc-auth"
+                        className="w-full pl-8 pr-2 py-1.5 text-xs bg-zinc-900 border border-zinc-700/80 rounded-xl text-zinc-100 font-mono focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveUrl}
+                      className="px-3.5 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors cursor-pointer shadow-sm"
+                    >
+                      Set
+                    </button>
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="flex flex-wrap gap-1.5 items-center text-[10px] text-zinc-400 pt-0.5">
+                    <span className="text-zinc-500 font-medium">Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInputUrl('/tc-auth');
+                        setBaseUrl('/tc-auth');
+                        toast.success('Set base URL to /tc-auth');
+                      }}
+                      className={`px-2 py-0.5 rounded font-mono text-xs border transition-all cursor-pointer ${
+                        baseUrl === '/tc-auth'
+                          ? 'bg-zinc-800 text-white border-zinc-600 font-bold'
+                          : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
+                      }`}
+                    >
+                      /tc-auth
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInputUrl('https://app.totalchaos.online/tc-auth');
+                        setBaseUrl('https://app.totalchaos.online/tc-auth');
+                        toast.success('Set base URL to https://app.totalchaos.online/tc-auth');
+                      }}
+                      className={`px-2 py-0.5 rounded font-mono text-xs border transition-all cursor-pointer ${
+                        baseUrl === 'https://app.totalchaos.online/tc-auth'
+                          ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold'
+                          : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                      }`}
+                    >
+                      https://app.totalchaos.online/tc-auth
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -242,7 +367,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
           </div>
           <div className="relative flex justify-center text-[11px] uppercase">
             <span className="bg-zinc-900 px-3 text-zinc-500 font-bold tracking-wider">
-              or sign in with
+              or sign in with credentials
             </span>
           </div>
         </div>
@@ -258,7 +383,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Password
+            Password Login
           </button>
           <button
             type="button"
@@ -281,7 +406,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
-                  placeholder="atharv or admin@tcauth.dev"
+                  placeholder="admin@tcauth.dev or atharv"
                   {...registerPassword('identifier')}
                   className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
                 />
@@ -300,36 +425,10 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               </div>
             </FormField>
 
-            <div className="p-3 rounded-2xl bg-zinc-950/60 border border-zinc-800/80 text-xs text-zinc-300">
-              <div className="font-semibold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5 flex items-center justify-between">
-                <span>Quick Test Account Credentials:</span>
-                <span className="text-[10px] text-indigo-400 font-mono">Superadmin</span>
-              </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idInput = document.querySelector('input[name="identifier"]') as HTMLInputElement;
-                    const passInput = document.querySelector('input[name="password"]') as HTMLInputElement;
-                    if (idInput && passInput) {
-                      idInput.value = 'atharv';
-                      passInput.value = 'atharv@112';
-                      idInput.dispatchEvent(new Event('input', { bubbles: true }));
-                      passInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 font-mono text-[11px] font-semibold transition-colors flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  atharv / atharv@112
-                </button>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-2"
+              className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
             >
               {isLoading ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -346,14 +445,14 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
           <div className="space-y-4">
             {!otpSent ? (
               <form onSubmit={handleRequestOtp} className="space-y-4">
-                <FormField label="Email Address" required hint="We will generate or email a temporary OTP login code.">
+                <FormField label="Email Address" required hint="We will email a temporary OTP login code.">
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
                     <input
                       type="email"
-                      value={otpEmail}
+                      value={otpEmail || ''}
                       onChange={(e) => setOtpEmail(e.target.value)}
-                      placeholder="jane@example.com"
+                      placeholder="admin@tcauth.dev"
                       required
                       className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
                     />
@@ -363,7 +462,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 <button
                   type="submit"
                   disabled={isSendingOtp}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSendingOtp ? (
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -391,7 +490,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 <FormField label="Enter OTP Code" required>
                   <input
                     type="text"
-                    value={otpCode}
+                    value={otpCode || ''}
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="123456"
                     required
@@ -403,7 +502,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isLoading ? (
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -419,10 +518,16 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-400">
           Don't have an account?{' '}
           <button
-            onClick={() => onNavigate('/signup')}
-            className="font-bold text-indigo-400 hover:underline hover:text-indigo-300"
+            onClick={() => {
+              if (apiMode === 'demo') {
+                toast.error('Sign up is only available in Live Server mode. Please switch to Live Server mode first.');
+              } else {
+                onNavigate('/signup');
+              }
+            }}
+            className="font-bold text-indigo-400 hover:underline hover:text-indigo-300 cursor-pointer"
           >
-            Create superadmin account
+            Create account
           </button>
         </div>
       </div>

@@ -318,7 +318,7 @@ export const OtpPage: React.FC = () => {
             <FormField label="Identifier (Email / Phone)" required hint="Target recipient identifier">
               <input
                 type="text"
-                value={identifier}
+                value={identifier || ''}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="user@example.com"
                 required
@@ -328,7 +328,7 @@ export const OtpPage: React.FC = () => {
 
             <FormField label="Challenge Purpose" required>
               <select
-                value={purpose}
+                value={purpose || 'login'}
                 onChange={(e) => setPurpose(e.target.value as OTPPurpose)}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
               >
@@ -341,7 +341,7 @@ export const OtpPage: React.FC = () => {
             <FormField label="Expiration Duration (Seconds)" required hint="Standard default is 600 seconds (10 mins)">
               <input
                 type="number"
-                value={expiresSeconds}
+                value={expiresSeconds ?? 600}
                 onChange={(e) => setExpiresSeconds(Number(e.target.value))}
                 min={30}
                 max={86400}

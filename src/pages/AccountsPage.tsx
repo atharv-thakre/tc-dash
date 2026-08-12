@@ -126,13 +126,13 @@ export const AccountsPage: React.FC = () => {
   const handleOpenEdit = (acc: Account) => {
     setEditingAccount(acc);
     reset({
-      name: acc.name,
-      email: acc.email,
-      handle: acc.handle,
+      name: acc.name || '',
+      email: acc.email || '',
+      handle: acc.handle || '',
       phone: acc.phone || '',
       avatar_url: acc.avatar_url || '',
-      role: acc.role,
-      status: acc.status,
+      role: acc.role || 'user',
+      status: acc.status || 'active',
       password: '',
     });
     setIsCreateOpen(true);
@@ -202,7 +202,7 @@ export const AccountsPage: React.FC = () => {
       accessorKey: 'id' as const,
       cell: (item: Account) => (
         <div className="space-y-0.5">
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded border border-gray-200/80 dark:border-gray-700/60 inline-block">
+          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 rounded-lg border border-gray-200/80 dark:border-gray-700/60 inline-block shadow-2xs">
             #{item.id}
           </span>
           {(item as any).account_id && String((item as any).account_id) !== String(item.id) && (
@@ -216,11 +216,11 @@ export const AccountsPage: React.FC = () => {
       sortable: true,
       accessorKey: 'name' as const,
       cell: (item: Account) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 py-1">
           <UserAvatar src={item.avatar_url} name={item.name} size="md" />
-          <div>
-            <p className="font-semibold text-gray-900 dark:text-white leading-tight">{item.name}</p>
-            <p className="text-xs text-gray-400 font-mono">@{item.handle}</p>
+          <div className="space-y-0.5">
+            <p className="font-bold text-xs text-gray-900 dark:text-white leading-tight">{item.name}</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono">@{item.handle}</p>
           </div>
         </div>
       ),
@@ -230,9 +230,9 @@ export const AccountsPage: React.FC = () => {
       sortable: true,
       accessorKey: 'email' as const,
       cell: (item: Account) => (
-        <div>
-          <p className="text-gray-900 dark:text-gray-200 text-xs font-medium">{item.email}</p>
-          <p className="text-[11px] text-gray-400">{item.phone || 'No phone set'}</p>
+        <div className="space-y-0.5 py-1">
+          <p className="text-xs font-bold text-gray-900 dark:text-white font-mono">{item.email}</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">{item.phone || 'No phone set'}</p>
         </div>
       ),
     },
@@ -241,9 +241,10 @@ export const AccountsPage: React.FC = () => {
       sortable: true,
       accessorKey: 'role' as const,
       cell: (item: Account) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap py-1">
           <Badge
             variant={item.role === 'superadmin' ? 'purple' : item.role === 'admin' ? 'info' : 'neutral'}
+            className="capitalize font-semibold text-[11px] px-2.5 py-0.5"
           >
             {item.role}
           </Badge>
@@ -257,6 +258,7 @@ export const AccountsPage: React.FC = () => {
                 ? 'warning'
                 : 'neutral'
             }
+            className="capitalize font-semibold text-[11px] px-2.5 py-0.5"
           >
             {item.status}
           </Badge>
@@ -267,7 +269,9 @@ export const AccountsPage: React.FC = () => {
       header: 'Created',
       sortable: true,
       accessorKey: 'created_at' as const,
-      cell: (item: Account) => <span className="text-xs font-mono text-gray-500">{formatDate(item.created_at)}</span>,
+      cell: (item: Account) => (
+        <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{formatDate(item.created_at)}</span>
+      ),
     },
   ];
 

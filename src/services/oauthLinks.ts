@@ -48,7 +48,7 @@ export const oauthLinksService = {
     return normalizePaginatedResponse<OAuthLink>(resData);
   },
 
-  // GET /oauth/query or GET /oauth/ with query filters
+  // GET /oauth/query or GET /oauth/qurey
   async queryOAuthLinks(
     field: string,
     value: string,
@@ -60,8 +60,15 @@ export const oauthLinksService = {
       const all = getDemoOAuthLinks();
       const filtered = all.filter((link: any) => {
         if (!value) return true;
-        const val = String(link[field] || '').toLowerCase();
-        return val.includes(value.toLowerCase());
+        let targetVal = '';
+        if (field === 'provider_id') {
+          targetVal = String(link.provider_user_id || link.provider_id || '');
+        } else if (field === 'account_id') {
+          targetVal = String(link.account_id || '');
+        } else {
+          targetVal = String(link.id || '');
+        }
+        return targetVal.toLowerCase().includes(value.toLowerCase());
       });
       const start = (page - 1) * limit;
       return {
@@ -71,7 +78,16 @@ export const oauthLinksService = {
     }
     const resData = await requestWithFallback<any>(
       'get',
-      ['/oauth/query', '/oauth/query/', '/oauth/', '/oauth', '/oauth/link/query', '/oauth/link'],
+      [
+        '/oauth/query',
+        '/oauth/qurey',
+        '/oauth/query/',
+        '/oauth/qurey/',
+        '/oauth/',
+        '/oauth',
+        '/oauth/link/query',
+        '/oauth/link',
+      ],
       {
         params: {
           field,

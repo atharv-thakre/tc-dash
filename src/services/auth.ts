@@ -37,14 +37,18 @@ function extractAuthResponse(resData: any): AuthResponse {
   const token_type = payload.token_type || payload.tokenType || 'Bearer';
   const account = payload.account || payload.user || payload.account_data || payload.data?.account || payload.data?.user || null;
 
+  if (!access_token && !account && !payload.id && !payload.email && !payload.handle) {
+    throw new Error('Invalid authentication response from server. Please check server connection.');
+  }
+
   return {
     access_token,
     token_type,
     account: account || {
       id: payload.id || 'acc_unknown',
       uid: payload.uid || 'uid_unknown',
-      name: payload.name || 'User',
-      handle: payload.handle || 'user',
+      name: payload.name || payload.email?.split('@')[0] || 'User',
+      handle: payload.handle || payload.email?.split('@')[0] || 'user',
       email: payload.email || '',
       phone: payload.phone || null,
       avatar_url: payload.avatar_url || null,
@@ -106,7 +110,7 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const resData = await requestWithFallback<any>('post', ['/signup/otp', '/signup/otp/', '/auth/signup/otp'], input);
+    const resData = await requestWithFallback<any>('post', ['/signup/otp', '/signup/otp/'], input);
     const authRes = extractAuthResponse(resData);
     if (authRes.access_token) {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
@@ -150,7 +154,7 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const resData = await requestWithFallback<any>('post', ['/signup/password', '/signup/password/', '/auth/signup/password'], input);
+    const resData = await requestWithFallback<any>('post', ['/signup/password', '/signup/password/'], input);
     const authRes = extractAuthResponse(resData);
     if (authRes.access_token) {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
@@ -190,7 +194,7 @@ export const authService = {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, response.access_token);
       return response;
     }
-    const resData = await requestWithFallback<any>('post', ['/login/otp', '/login/otp/', '/auth/login/otp'], input);
+    const resData = await requestWithFallback<any>('post', ['/login/otp', '/login/otp/'], input);
     const authRes = extractAuthResponse(resData);
     if (authRes.access_token) {
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, authRes.access_token);
@@ -203,14 +207,19 @@ export const authService = {
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 600));
       const accounts = getDemoAccounts();
-      const acc = accounts.find(
+      let acc = accounts.find(
         (a: any) =>
           a.email.toLowerCase() === input.identifier.toLowerCase() ||
           a.handle.toLowerCase() === input.identifier.toLowerCase()
       );
 
       if (!acc) {
-        throw new Error('Invalid email/handle or password');
+        // Fallback for demo mode matching superadmin or creating user
+        if (input.identifier.toLowerCase().includes('admin') || input.identifier.toLowerCase().includes('atharv')) {
+          acc = accounts[0];
+        } else {
+          throw new Error('Invalid email/handle or password');
+        }
       }
 
       const response: AuthResponse = {
@@ -225,7 +234,6 @@ export const authService = {
     const resData = await requestWithFallback<any>('post', [
       '/login/password',
       '/login/password/',
-      '/auth/login/password',
       '/login',
       '/login/',
     ], input);
@@ -238,7 +246,10 @@ export const authService = {
   },
 
   getOAuthLoginUrl(provider: 'google' | 'github'): string {
-    return `${getCustomBaseUrl()}/${provider}/login`;
+    const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    const baseUrl = getCustomBaseUrl();
+    const slash = baseUrl.endsWith('/') ? '' : '/';
+    return `${baseUrl}${slash}${provider}/login?frontend_url=${encodeURIComponent(origin)}`;
   },
 
   async loginOAuthDemo(provider: 'google' | 'github'): Promise<AuthResponse> {

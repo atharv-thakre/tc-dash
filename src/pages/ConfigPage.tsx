@@ -58,10 +58,38 @@ export const ConfigPage: React.FC = () => {
     try {
       const data = await configService.loadConfig();
       setConfig(data);
-      if (data.email) setEmailForm(data.email);
-      if (data.github) setGithubForm(data.github);
-      if (data.google) setGoogleForm(data.google);
-      if (data.jwt) setJwtForm(data.jwt);
+      if (data.email) {
+        setEmailForm({
+          host: data.email.host ?? '',
+          port: data.email.port ?? 587,
+          username: data.email.username ?? '',
+          password: data.email.password ?? '',
+          sender: data.email.sender ?? '',
+          sender_name: data.email.sender_name ?? '',
+          use_tls: data.email.use_tls ?? true,
+        });
+      }
+      if (data.github) {
+        setGithubForm({
+          client_id: data.github.client_id ?? '',
+          client_secret: data.github.client_secret ?? '',
+          redirect_uri: data.github.redirect_uri ?? '',
+        });
+      }
+      if (data.google) {
+        setGoogleForm({
+          client_id: data.google.client_id ?? '',
+          client_secret: data.google.client_secret ?? '',
+          redirect_uri: data.google.redirect_uri ?? '',
+        });
+      }
+      if (data.jwt) {
+        setJwtForm({
+          secret_key: data.jwt.secret_key ?? '',
+          algorithm: data.jwt.algorithm ?? 'HS256',
+          session_duration_days: data.jwt.session_duration_days ?? 7,
+        });
+      }
     } catch (err: any) {
       toast.error(getErrorMessage(err, 'Failed to load system configuration'));
     } finally {
@@ -162,7 +190,7 @@ export const ConfigPage: React.FC = () => {
                   <FormField label="SMTP Host" required>
                     <input
                       type="text"
-                      value={emailForm.host}
+                      value={emailForm.host || ''}
                       onChange={(e) => setEmailForm({ ...emailForm, host: e.target.value })}
                       placeholder="smtp.mailgun.org"
                       required
@@ -174,7 +202,7 @@ export const ConfigPage: React.FC = () => {
                   <FormField label="Port" required>
                     <input
                       type="number"
-                      value={emailForm.port}
+                      value={emailForm.port ?? ''}
                       onChange={(e) => setEmailForm({ ...emailForm, port: Number(e.target.value) })}
                       placeholder="587"
                       required
@@ -187,7 +215,7 @@ export const ConfigPage: React.FC = () => {
               <FormField label="SMTP Username" required>
                 <input
                   type="text"
-                  value={emailForm.username}
+                  value={emailForm.username || ''}
                   onChange={(e) => setEmailForm({ ...emailForm, username: e.target.value })}
                   placeholder="postmaster@mg.domain.com"
                   required
@@ -219,7 +247,7 @@ export const ConfigPage: React.FC = () => {
                 <FormField label="Sender Email" required>
                   <input
                     type="email"
-                    value={emailForm.sender}
+                    value={emailForm.sender || ''}
                     onChange={(e) => setEmailForm({ ...emailForm, sender: e.target.value })}
                     placeholder="noreply@domain.com"
                     required
@@ -230,7 +258,7 @@ export const ConfigPage: React.FC = () => {
                 <FormField label="Sender Display Name" required>
                   <input
                     type="text"
-                    value={emailForm.sender_name}
+                    value={emailForm.sender_name || ''}
                     onChange={(e) => setEmailForm({ ...emailForm, sender_name: e.target.value })}
                     placeholder="tc-auth Security"
                     required
@@ -282,7 +310,7 @@ export const ConfigPage: React.FC = () => {
               <FormField label="Client ID" required>
                 <input
                   type="text"
-                  value={githubForm.client_id}
+                  value={githubForm.client_id || ''}
                   onChange={(e) => setGithubForm({ ...githubForm, client_id: e.target.value })}
                   placeholder="Ov23li9823kL0923a1"
                   required
@@ -314,7 +342,7 @@ export const ConfigPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <input
                     type="text"
-                    value={githubForm.redirect_uri}
+                    value={githubForm.redirect_uri || ''}
                     onChange={(e) => setGithubForm({ ...githubForm, redirect_uri: e.target.value })}
                     placeholder="http://localhost:3000/tc-auth/github/callback"
                     required
@@ -381,7 +409,7 @@ export const ConfigPage: React.FC = () => {
               <FormField label="Client ID" required>
                 <input
                   type="text"
-                  value={googleForm.client_id}
+                  value={googleForm.client_id || ''}
                   onChange={(e) => setGoogleForm({ ...googleForm, client_id: e.target.value })}
                   placeholder="992019283019-apps.googleusercontent.com"
                   required
@@ -413,7 +441,7 @@ export const ConfigPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <input
                     type="text"
-                    value={googleForm.redirect_uri}
+                    value={googleForm.redirect_uri || ''}
                     onChange={(e) => setGoogleForm({ ...googleForm, redirect_uri: e.target.value })}
                     placeholder="http://localhost:3000/tc-auth/google/callback"
                     required
@@ -483,7 +511,7 @@ export const ConfigPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Algorithm" required>
                   <select
-                    value={jwtForm.algorithm}
+                    value={jwtForm.algorithm || 'HS256'}
                     onChange={(e) => setJwtForm({ ...jwtForm, algorithm: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
                   >
@@ -497,7 +525,7 @@ export const ConfigPage: React.FC = () => {
                 <FormField label="Session Duration (Days)" required>
                   <input
                     type="number"
-                    value={jwtForm.session_duration_days}
+                    value={jwtForm.session_duration_days ?? ''}
                     onChange={(e) => setJwtForm({ ...jwtForm, session_duration_days: Number(e.target.value) })}
                     min={1}
                     max={365}

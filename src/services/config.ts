@@ -28,7 +28,40 @@ export interface ServerCounts {
   otp: number;
 }
 
+export interface PulseResponse {
+  system_time: string;
+  response?: string;
+  status: string;
+  state: string;
+}
+
 export const configService = {
+  // GET /config/pulse
+  async testPulse(): Promise<PulseResponse> {
+    if (getStoredApiMode() === 'demo') {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return {
+        system_time: new Date().toISOString(),
+        response: 'Hello (Demo Mode)',
+        status: 'healthy (Demo)',
+        state: 'active (Demo Mock)',
+      };
+    }
+    const resData = await requestWithFallback<any>('get', [
+      '/config/pulse',
+      '/config/pulse/',
+      '/pulse',
+      '/pulse/',
+    ]);
+    const payload = resData?.data || resData || {};
+    return {
+      system_time: payload.system_time || new Date().toISOString(),
+      response: payload.response ?? 'Hello',
+      status: payload.status || 'healthy',
+      state: payload.state || 'active',
+    };
+  },
+
   // GET /config/counts
   async getCounts(): Promise<ServerCounts> {
     if (getStoredApiMode() === 'demo') {
