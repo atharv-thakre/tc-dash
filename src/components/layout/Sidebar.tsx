@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileCode2,
   KeyRound,
   LayoutDashboard,
   Link,
@@ -7,12 +11,14 @@ import {
   ShieldCheck,
   Sliders,
   Sparkles,
+  Terminal,
   User,
   Users,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import { Badge } from '../common/Badge';
+import { LIBRARY_DOCS } from '../../data/docsData';
 
 interface SidebarProps {
   activePath: string;
@@ -28,6 +34,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { account, logout, isSuperAdmin } = useAuth();
+
+  // Collapsible Documentation States
+  const [isDocsOpen, setIsDocsOpen] = useState(true);
+  const [isLibOpen, setIsLibOpen] = useState(true);
+  const [isApiOpen, setIsApiOpen] = useState(false);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, requiresSuperAdmin: false },
@@ -59,8 +70,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex flex-col flex-1 p-4 overflow-y-auto">
-          {/* Main Nav Section */}
+        <div className="flex flex-col flex-1 p-4 overflow-y-auto space-y-6">
+          {/* Main Management Section */}
           <div className="space-y-1">
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500 mb-2">
               Management
@@ -74,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.path}
                   onClick={() => handleNavClick(item.path)}
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group border border-transparent',
+                    'flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold transition-all group border border-transparent cursor-pointer',
                     isActive
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20 dark:bg-zinc-900 dark:text-white dark:border-zinc-800'
                       : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-zinc-100'
@@ -94,14 +105,123 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
 
-          <div className="mt-8 pt-4 border-t border-slate-100 dark:border-zinc-800">
+          {/* Expandable/Collapsible Documentation Section */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsDocsOpen(!isDocsOpen)}
+              className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Documentation</span>
+              </div>
+              {isDocsOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+
+            {isDocsOpen && (
+              <div className="pl-1 pt-1 space-y-1">
+                {/* Expandable API Docs Group */}
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setIsApiOpen(!isApiOpen);
+                      handleNavClick('/docs/api/api-overview');
+                    }}
+                    className={cn(
+                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border border-transparent cursor-pointer',
+                      activePath.startsWith('/docs/api')
+                        ? 'bg-indigo-50 dark:bg-zinc-900 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-zinc-800 font-bold'
+                        : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-zinc-100'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Terminal className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
+                      <span>API Docs</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                        Soon
+                      </span>
+                      {isApiOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    </div>
+                  </button>
+
+                  {isApiOpen && (
+                    <div className="pl-4 space-y-0.5 border-l border-slate-200 dark:border-zinc-800 ml-3 py-1">
+                      <button
+                        onClick={() => handleNavClick('/docs/api/api-overview')}
+                        className={cn(
+                          'block w-full text-left px-2 py-1 text-[11px] rounded-md transition-all font-mono truncate cursor-pointer',
+                          activePath === '/docs/api/api-overview'
+                            ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/50 dark:bg-zinc-900'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                        )}
+                      >
+                        • REST API Overview
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Expandable Library Usage Docs (lib) */}
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => setIsLibOpen(!isLibOpen)}
+                    className={cn(
+                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border border-transparent cursor-pointer',
+                      activePath.startsWith('/docs/lib') || activePath === '/docs'
+                        ? 'bg-indigo-50 dark:bg-zinc-900 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-zinc-800 font-bold'
+                        : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-zinc-100'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileCode2 className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Library Usage (lib)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        {LIBRARY_DOCS.length}
+                      </span>
+                      {isLibOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    </div>
+                  </button>
+
+                  {isLibOpen && (
+                    <div className="pl-3 space-y-0.5 border-l border-slate-200 dark:border-zinc-800 ml-3 py-1 max-h-64 overflow-y-auto">
+                      {LIBRARY_DOCS.map((doc) => {
+                        const targetPath = `/docs/lib/${doc.id}`;
+                        const isDocActive = activePath === targetPath || (activePath === '/docs' && doc.id === 'setup');
+                        return (
+                          <button
+                            key={doc.id}
+                            onClick={() => handleNavClick(targetPath)}
+                            className={cn(
+                              'block w-full text-left px-2 py-1 text-[11px] rounded-md transition-all truncate cursor-pointer',
+                              isDocActive
+                                ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-zinc-900/80'
+                                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-900/40'
+                            )}
+                          >
+                            {doc.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Personal Account Section */}
+          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1">
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500 mb-2">
               Personal Account
             </p>
             <button
               onClick={() => handleNavClick('/profile')}
               className={cn(
-                'flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group border border-transparent',
+                'flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold transition-all group border border-transparent cursor-pointer',
                 activePath === '/profile'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20 dark:bg-zinc-900 dark:text-white dark:border-zinc-800'
                   : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900/60 hover:text-slate-900 dark:hover:text-zinc-100'
@@ -114,8 +234,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Bottom Card for Superadmin Status */}
-          <div className="mt-auto pt-4 space-y-3">
+          {/* Bottom Card for Role Status */}
+          <div className="mt-auto pt-2 space-y-3">
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -130,8 +250,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
                 {isSuperAdmin
-                  ? 'Full administrative privileges active. All 4 config cards & CRUD models accessible.'
-                  : 'Standard permissions. Access to Profile settings and personal sessions.'}
+                  ? 'Full administrative privileges active. Access to system config & docs.'
+                  : 'Standard permissions. Access to Profile settings and SDK docs.'}
               </p>
             </div>
 

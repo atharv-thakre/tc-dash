@@ -17,6 +17,7 @@ import { OtpPage } from './pages/OtpPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { DocsPage } from './pages/DocsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,17 @@ function AppRouter() {
     return <LoginPage onNavigate={handleNavigate} />;
   }
 
+  // Helper to parse docs section & docId from currentPath
+  const isDocs = currentPath.startsWith('/docs');
+  let docsSection = 'lib';
+  let docsDocId = 'setup';
+
+  if (isDocs) {
+    const parts = currentPath.split('/').filter(Boolean);
+    if (parts.length >= 2) docsSection = parts[1];
+    if (parts.length >= 3) docsDocId = parts[2];
+  }
+
   return (
     <AppLayout activePath={currentPath} onNavigate={handleNavigate}>
       {currentPath === '/dashboard' && <DashboardPage onNavigate={handleNavigate} />}
@@ -113,6 +125,13 @@ function AppRouter() {
         </ProtectedRoute>
       )}
       {currentPath === '/profile' && <ProfilePage onNavigate={handleNavigate} />}
+      {isDocs && (
+        <DocsPage
+          section={docsSection}
+          docId={docsDocId}
+          onNavigate={handleNavigate}
+        />
+      )}
     </AppLayout>
   );
 }
