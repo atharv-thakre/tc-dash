@@ -33,7 +33,7 @@ export interface DocItem {
   module: string;
   description: string;
   overview?: string;
-  content: string;
+  content?: string;
   schemas?: SchemaSpec[];
   methods?: MethodSpec[];
   codeSnippet?: string;
@@ -1360,25 +1360,975 @@ print("Active Sessions:", counts["sessions"])`
   }
 ];
 
-export const API_DOCS_PLACEHOLDER: DocItem[] = [
+export const API_DOCS: DocItem[] = [
   {
-    id: 'api-overview',
-    title: 'REST API Overview',
-    module: 'HTTP Endpoints',
-    description: 'Comprehensive REST API documentation specification coming soon.',
-    overview: `The HTTP REST API documentation for \`tc_auth\` will be provided here shortly.`,
-    content: `Planned HTTP Endpoints Coverage:
-- Auth: POST /login/password, POST /login/otp, POST /signup/password, POST /signup/otp
-- Profile: GET /me, PATCH /me, POST /me/password
-- Accounts: GET /accounts/, POST /accounts/, GET /accounts/{id}, PUT /accounts/{id}, DELETE /accounts/{id}
-- Sessions: GET /sessions/, DELETE /sessions/{id}, DELETE /sessions/clear
-- OTP: POST /send/email/otp/{purpose}, GET /otp/, DELETE /otp/cleanup
-- OAuth: GET /oauth/links/, GET /login/google, GET /login/github`,
-    codeSnippet: `curl -X POST https://api.totalchaos.online/forgot/password \\
+    id: 'login-routes',
+    title: 'Sign In / Sign Up Routes',
+    module: '/tc-auth',
+    description: 'Public authentication endpoints for account registration, email/password login, email OTP login, and password resetting.',
+    overview: `Base path: \`/tc-auth\`. All endpoints in this section are publicly accessible. Successful signup and login requests return an \`access_token\` JWT string that must be attached as a Bearer header (\`Authorization: Bearer <access_token>\`) for protected endpoints.`,
+    content: `Common Status Codes:
+- 200 OK: Request succeeded. Returns access token or operation result.
+- 400 Bad Request: Missing required body parameters or payload validation failure.
+- 401 Unauthorized: Invalid credentials or incorrect/expired One-Time Password (OTP).
+- 404 Not Found: Account with provided email or handle does not exist.`,
+    schemas: [
+      {
+        title: 'Standard Login / Authentication Response Schema',
+        description: 'Dictionary payload returned by signup/otp, signup/password, login/otp, login/password, and forgot/password',
+        json: `{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhaWQiOjEsInNpZCI6NjAsImV4cCI6MTc4NzEyOTg2N30...",
+  "token_type": "Bearer",
+  "account": {
+    "id": 1,
+    "uid": "2d7b5f8e-8d8a-4cc4-9c3d-2f2c6c4d2e28",
+    "name": "Jane Doe",
+    "handle": "jane",
+    "email": "jane@example.com",
+    "phone": null,
+    "avatar_url": null,
+    "role": "user",
+    "status": "active",
+    "created_at": "2026-08-07T12:00:00",
+    "updated_at": "2026-08-07T12:00:00"
+  }
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'POST /tc-auth/send/email/otp/{purpose}',
+        signature: 'POST /tc-auth/send/email/otp/{purpose}',
+        description: 'Generates and sends a 6-digit numeric One-Time Password via SMTP to the recipient email address for a specific authentication flow.',
+        parameters: [
+          { name: 'purpose', type: 'path', required: true, description: 'OTP purpose flow key: "signup", "login", "reset", or "verify".' },
+          { name: 'email', type: 'body (str)', required: true, description: 'Target email address to receive the OTP code.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: '{"expires_at": 1735689600}'
+        },
+        exceptions: ['400 Bad Request: Invalid email format or missing body field.', '500 Internal Error: SMTP delivery failure.'],
+        example: `// Request
+await fetch("https://api.example.com/tc-auth/send/email/otp/signup", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "jane@example.com" })
+});`
+      },
+      {
+        name: 'POST /tc-auth/signup/otp',
+        signature: 'POST /tc-auth/signup/otp',
+        description: 'Verifies an active signup OTP code and registers a new account in the database. Returns access token and session.',
+        parameters: [
+          { name: 'name', type: 'body (str)', required: true, description: 'User display name.' },
+          { name: 'email', type: 'body (str)', required: true, description: 'Unique user email address.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'Account password (hashed with bcrypt).' },
+          { name: 'otp', type: 'body (str)', required: true, description: '6-digit OTP code received via email.' },
+          { name: 'handle', type: 'body (str)', required: false, default: 'None', description: 'Unique username handle.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Standard Login Response containing access_token, token_type, and account details.'
+        },
+        exceptions: ['400 Bad Request: Account with email or handle already exists.', '401 Unauthorized: Invalid or expired OTP code.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/signup/otp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Jane Doe",
+    email: "jane@example.com",
+    password: "password123",
+    otp: "123456",
+    handle: "jane"
+  })
+});
+const data = await res.json();`
+      },
+      {
+        name: 'POST /tc-auth/signup/password',
+        signature: 'POST /tc-auth/signup/password',
+        description: 'Creates a new user account directly with name, email, handle, and password without requiring an email OTP step.',
+        parameters: [
+          { name: 'name', type: 'body (str)', required: true, description: 'User display name.' },
+          { name: 'email', type: 'body (str)', required: true, description: 'Unique user email address.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'Account password.' },
+          { name: 'handle', type: 'body (str)', required: false, description: 'Unique username handle.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Standard Login Response with access_token and created account.'
+        },
+        exceptions: ['400 Bad Request: Duplicate email or handle.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/signup/password", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Jane Doe",
+    email: "jane@example.com",
+    handle: "jane",
+    password: "password123"
+  })
+});
+const data = await res.json();`
+      },
+      {
+        name: 'POST /tc-auth/login/otp',
+        signature: 'POST /tc-auth/login/otp',
+        description: 'Authenticates an existing user account using email address and a valid login OTP code.',
+        parameters: [
+          { name: 'email', type: 'body (str)', required: true, description: 'User account email address.' },
+          { name: 'otp', type: 'body (str)', required: true, description: '6-digit OTP code.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Standard Login Response containing access_token and account.'
+        },
+        exceptions: ['401 Unauthorized: Invalid or expired OTP.', '404 Not Found: User not found.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/login/otp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "jane@example.com",
+    otp: "123456"
+  })
+});
+const data = await res.json();`
+      },
+      {
+        name: 'POST /tc-auth/login/password',
+        signature: 'POST /tc-auth/login/password',
+        description: 'Authenticates a user account using an identifier (email address or username handle) and plain-text password.',
+        parameters: [
+          { name: 'identifier', type: 'body (str)', required: true, description: 'User email address OR username handle.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'Account plain-text password.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Standard Login Response with access_token and account details.'
+        },
+        exceptions: ['401 Unauthorized: Invalid identifier or incorrect password.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/login/password", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    identifier: "jane@example.com",
+    password: "password123"
+  })
+});
+const data = await res.json();`
+      },
+      {
+        name: 'POST /tc-auth/forgot/password',
+        signature: 'POST /tc-auth/forgot/password',
+        description: 'Resets account password after verifying a valid reset OTP code, then logs in the user and returns a fresh access token.',
+        parameters: [
+          { name: 'email', type: 'body (str)', required: true, description: 'Account email address.' },
+          { name: 'otp', type: 'body (str)', required: true, description: 'Password reset OTP code.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'New plain-text password.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Standard Login Response with fresh access_token.'
+        },
+        exceptions: ['401 Unauthorized: Invalid OTP code.', '404 Not Found: Account not found.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/forgot/password", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "jane@example.com",
+    otp: "123456",
+    password: "new-password123"
+  })
+});
+const data = await res.json();`
+      }
+    ],
+    codeSnippet: `// cURL Example: Login with Password
+curl -X POST https://api.example.com/tc-auth/login/password \\
   -H "Content-Type: application/json" \\
   -d '{
-    "email": "user@example.com",
-    "otp": "123456"
+    "identifier": "jane@example.com",
+    "password": "password123"
   }'`
+  },
+  {
+    id: 'oauth-routes',
+    title: 'OAuth Login Routes',
+    module: '/tc-auth',
+    description: 'Browser-facing OAuth redirection endpoints for initiating and completing Google OpenID Connect and GitHub OAuth authentication.',
+    overview: `Base path: \`/tc-auth\`. These endpoints manage browser redirects during third-party sign-in flows. The callback routes write session state cookies, so browsers must maintain cookies throughout the redirect chain.`,
+    content: `OAuth Flow Overview:
+1. User clicks provider login button in frontend application.
+2. Frontend navigates browser to GET /tc-auth/{provider}/login?frontend_url={URL}.
+3. Backend saves frontend_url in session and redirects browser to provider authorization consent page.
+4. User authorizes request; provider redirects browser to backend GET /tc-auth/{provider}/callback with state and code.
+5. Backend exchanges code for user profile, links or creates account, issues session token, and redirects browser back to \`\${frontend_url}/oauth/callback?access_token=...\`.`,
+    methods: [
+      {
+        name: 'GET /tc-auth/google/login',
+        signature: 'GET /tc-auth/google/login?frontend_url={URL}',
+        description: 'Initiates Google OAuth 2.0 OpenID Connect authorization flow by redirecting the browser to Google consent screen.',
+        parameters: [
+          { name: 'frontend_url', type: 'query (str)', required: true, description: 'URL of frontend app where the user should be returned after authentication.' }
+        ],
+        returns: {
+          type: 'HTTP 302 Redirect',
+          description: 'Redirects browser to https://accounts.google.com/o/oauth2/v2/auth...'
+        },
+        example: `// Frontend Initiation
+const frontendUrl = "https://app.example.com";
+window.location.href = \`\${baseUrl}/tc-auth/google/login?frontend_url=\${encodeURIComponent(frontendUrl)}\`;`
+      },
+      {
+        name: 'GET /tc-auth/google/callback',
+        signature: 'GET /tc-auth/google/callback?code={CODE}&state={STATE}',
+        description: 'Callback target registered in Google Cloud Console. Exchanges authorization code for Google ID token, creates local user/session, and redirects to frontend with token.',
+        parameters: [
+          { name: 'code', type: 'query (str)', required: true, description: 'Authorization code provided by Google.' },
+          { name: 'state', type: 'query (str)', required: false, description: 'State param used for CSRF protection.' }
+        ],
+        returns: {
+          type: 'HTTP 302 Redirect',
+          description: 'Redirects browser to ${frontend_url}/oauth/callback?access_token={JWT_TOKEN}'
+        }
+      },
+      {
+        name: 'GET /tc-auth/github/login',
+        signature: 'GET /tc-auth/github/login?frontend_url={URL}',
+        description: 'Initiates GitHub OAuth flow by redirecting the browser to github.com/login/oauth/authorize.',
+        parameters: [
+          { name: 'frontend_url', type: 'query (str)', required: true, description: 'URL of frontend app for final token redirect.' }
+        ],
+        returns: {
+          type: 'HTTP 302 Redirect',
+          description: 'Redirects browser to https://github.com/login/oauth/authorize...'
+        },
+        example: `// Frontend Initiation
+const frontendUrl = "https://app.example.com";
+window.location.href = \`\${baseUrl}/tc-auth/github/login?frontend_url=\${encodeURIComponent(frontendUrl)}\`;`
+      },
+      {
+        name: 'GET /tc-auth/github/callback',
+        signature: 'GET /tc-auth/github/callback?code={CODE}&state={STATE}',
+        description: 'Callback target registered in GitHub Developer Settings. Fetches profile (including primary private email resolution), creates account/link, and redirects to frontend with access_token.',
+        parameters: [
+          { name: 'code', type: 'query (str)', required: true, description: 'Authorization code from GitHub.' },
+          { name: 'state', type: 'query (str)', required: false, description: 'CSRF state string.' }
+        ],
+        returns: {
+          type: 'HTTP 302 Redirect',
+          description: 'Redirects browser to ${frontend_url}/oauth/callback?access_token={JWT_TOKEN}'
+        }
+      }
+    ],
+    codeSnippet: `// Handle OAuth Token in Frontend Callback Page (/oauth/callback)
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('access_token');
+
+if (token) {
+  localStorage.setItem('access_token', token);
+  window.location.href = '/dashboard';
+}`
+  },
+  {
+    id: 'oauth-integration',
+    title: 'OAuth Integration Guide',
+    module: 'Frontend Architecture',
+    description: 'Detailed browser integration patterns, configuration steps, and security guidelines for implementing OAuth sign-in.',
+    overview: `This guide explains how to connect your browser-based SPA (React, Vue, Svelte, or plain JavaScript) to tc_auth OAuth endpoints.`,
+    content: `Prerequisites Checklist:
+1. Configure provider credentials via Admin API: POST /tc-auth/config/google or POST /tc-auth/config/github.
+2. Register exact redirect URIs in provider developer consoles:
+   - Google: https://api.example.com/tc-auth/google/callback
+   - GitHub: https://api.example.com/tc-auth/github/callback
+3. Client Security: Never embed client_secret in browser code! Credentials remain securely stored inside backend service memory or database.`,
+    codeSnippet: `// Complete Frontend Integration React Hook Example
+import { useEffect } from 'react';
+
+export function useOAuthCallback(onSuccess) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('access_token');
+    
+    if (token) {
+      // Store token and clean URL
+      localStorage.setItem('access_token', token);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      onSuccess(token);
+    }
+  }, [onSuccess]);
+}
+
+export function OAuthButtons({ backendUrl, frontendUrl }) {
+  const handleGoogle = () => {
+    const url = \`\${backendUrl}/tc-auth/google/login?frontend_url=\${encodeURIComponent(frontendUrl)}\`;
+    window.location.href = url;
+  };
+
+  const handleGitHub = () => {
+    const url = \`\${backendUrl}/tc-auth/github/login?frontend_url=\${encodeURIComponent(frontendUrl)}\`;
+    window.location.href = url;
+  };
+
+  return (
+    <div className="flex gap-3">
+      <button onClick={handleGoogle}>Sign in with Google</button>
+      <button onClick={handleGitHub}>Sign in with GitHub</button>
+    </div>
+  );
+}`
+  },
+  {
+    id: 'profile-routes',
+    title: 'Profile & User Routes',
+    module: '/tc-auth',
+    description: 'Protected endpoints for retrieving user profile context, updating account details, changing passwords, and revoking sessions.',
+    overview: `Base path: \`/tc-auth\`. All endpoints in this section require an active JWT session token sent in the \`Authorization: Bearer <access_token>\` request header.`,
+    schemas: [
+      {
+        title: 'Current User Response Schema (GET /me)',
+        description: 'Comprehensive context dictionary returned by GET /tc-auth/me',
+        json: `{
+  "account": {
+    "id": 1,
+    "uid": "2d7b5f8e-8d8a-4cc4-9c3d-2f2c6c4d2e28",
+    "name": "Jane Doe",
+    "handle": "jane",
+    "email": "jane@example.com",
+    "phone": "+15555550100",
+    "avatar_url": "https://example.com/avatar.png",
+    "role": "user",
+    "status": "active",
+    "created_at": "2026-08-07T12:00:00",
+    "updated_at": "2026-08-07T12:00:00"
+  },
+  "session": {
+    "id": 9,
+    "account_id": 1,
+    "token_hash": "a8f5f167...",
+    "ip_address": "203.0.113.10",
+    "user_agent": "Mozilla/5.0",
+    "expires_at": "2026-08-14T12:00:00",
+    "created_at": "2026-08-07T12:00:00"
+  },
+  "payload": {
+    "aid": 1,
+    "sid": 9,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'GET /tc-auth/me',
+        signature: 'GET /tc-auth/me',
+        description: 'Returns profile details for authenticated user, current active session record, and decoded JWT payload claims.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Bearer access token (e.g. "Bearer eyJhbGci...")' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Dictionary containing account, session, and payload objects.'
+        },
+        exceptions: ['401 Unauthorized: Invalid or expired Bearer access token.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/me", {
+  method: "GET",
+  headers: {
+    "Authorization": \`Bearer \${accessToken}\`
+  }
+});
+const me = await res.json();`
+      },
+      {
+        name: 'PATCH /tc-auth/me',
+        signature: 'PATCH /tc-auth/me',
+        description: 'Updates standard profile fields (name, email, handle, avatar URL, phone) for the authenticated user.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Bearer access token.' },
+          { name: 'name', type: 'body (str)', required: false, description: 'Updated display name.' },
+          { name: 'email', type: 'body (str)', required: false, description: 'Updated email address.' },
+          { name: 'handle', type: 'body (str)', required: false, description: 'Updated username handle.' },
+          { name: 'avatar_url', type: 'body (str)', required: false, description: 'Updated avatar picture URL.' },
+          { name: 'phone', type: 'body (str)', required: false, description: 'Updated phone number.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Updated user account record object.'
+        },
+        exceptions: ['400 Bad Request: Unique constraint violation on email or handle.', '401 Unauthorized: Missing or invalid token.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/me", {
+  method: "PATCH",
+  headers: {
+    "Authorization": \`Bearer \${accessToken}\`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: "Jane Doe",
+    avatar_url: "https://example.com/new-avatar.png"
+  })
+});
+const account = await res.json();`
+      },
+      {
+        name: 'PUT /tc-auth/update/password',
+        signature: 'PUT /tc-auth/update/password',
+        description: 'Hashes and updates plain-text password for the currently authenticated user.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Bearer access token.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'New plain-text password.' }
+        ],
+        returns: {
+          type: 'null',
+          description: 'Returns null on success.'
+        },
+        exceptions: ['401 Unauthorized: Invalid access token.'],
+        example: `await fetch("https://api.example.com/tc-auth/update/password", {
+  method: "PUT",
+  headers: {
+    "Authorization": \`Bearer \${accessToken}\`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ password: "new-secure-password123" })
+});`
+      },
+      {
+        name: 'POST /tc-auth/logout',
+        signature: 'POST /tc-auth/logout',
+        description: 'Destroys the current active session record from the database and revokes session token.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Bearer access token.' }
+        ],
+        returns: {
+          type: 'null',
+          description: 'Returns null on success.'
+        },
+        example: `await fetch("https://api.example.com/tc-auth/logout", {
+  method: "POST",
+  headers: { "Authorization": \`Bearer \${accessToken}\` }
+});`
+      },
+      {
+        name: 'POST /tc-auth/logout-all',
+        signature: 'POST /tc-auth/logout-all',
+        description: 'Revokes all active sessions across all devices for the current account.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Bearer access token.' }
+        ],
+        returns: {
+          type: 'null',
+          description: 'Returns null on success.'
+        },
+        example: `await fetch("https://api.example.com/tc-auth/logout-all", {
+  method: "POST",
+  headers: { "Authorization": \`Bearer \${accessToken}\` }
+});`
+      }
+    ],
+    codeSnippet: `curl -X GET https://api.example.com/tc-auth/me \\
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+  },
+  {
+    id: 'dashboard-routes',
+    title: 'Dashboard & System Config Routes',
+    module: '/tc-auth/config',
+    description: 'System health check probe, live credentials loader, system metrics counters, and runtime service configuration setters.',
+    overview: `Base path: \`/tc-auth/config\`. \`GET /pulse\` is public. All other endpoints require superadmin authorization header.`,
+    schemas: [
+      {
+        title: 'System Configuration Load Response Schema',
+        description: 'JSON returned by GET /tc-auth/config/load/',
+        json: `{
+  "email": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "username": "mailer@example.com",
+    "password": "***",
+    "sender": "noreply@example.com",
+    "sender_name": "Auth Module",
+    "use_tls": true
+  },
+  "github": {
+    "client_id": "1234567890abcdef",
+    "client_secret": "*******************",
+    "redirect_uri": "https://api.example.com/tc-auth/github/callback"
+  },
+  "google": {
+    "client_id": "9876543210.apps.googleusercontent.com",
+    "client_secret": "*******************",
+    "redirect_uri": "https://api.example.com/tc-auth/google/callback"
+  },
+  "jwt": {
+    "secret_key": "*******************",
+    "algorithm": "HS256",
+    "session_duration_days": 7
+  }
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'GET /tc-auth/config/pulse',
+        signature: 'GET /tc-auth/config/pulse',
+        description: 'Public health probe endpoint for monitoring service status, system clock, and availability.',
+        parameters: [],
+        returns: {
+          type: 'JSON Object',
+          description: '{"system_time": "2026-08-12T10:00:00.000000", "response": "Hello", "status": "healthy", "state": "active"}'
+        },
+        example: `const res = await fetch("https://api.example.com/tc-auth/config/pulse");
+const data = await res.json();`
+      },
+      {
+        name: 'GET /tc-auth/config/load/',
+        signature: 'GET /tc-auth/config/load/',
+        description: 'Loads active configuration settings for SMTP Email, GitHub OAuth, Google OAuth, and JWT Key settings.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin Bearer access token.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: 'Full config dictionary with masked sensitive credentials.'
+        },
+        exceptions: ['403 Forbidden: Account is not superadmin.'],
+        example: `const res = await fetch("https://api.example.com/tc-auth/config/load/", {
+  headers: { "Authorization": \`Bearer \${adminToken}\` }
+});
+const config = await res.json();`
+      },
+      {
+        name: 'GET /tc-auth/config/counts',
+        signature: 'GET /tc-auth/config/counts',
+        description: 'Returns real-time database primary record counts for accounts, oauth links, active sessions, and OTP entries.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin Bearer access token.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: '{"accounts": 123, "oauth": 7, "sessions": 42, "otp": 3}'
+        },
+        example: `const res = await fetch("https://api.example.com/tc-auth/config/counts", {
+  headers: { "Authorization": \`Bearer \${adminToken}\` }
+});
+const counts = await res.json();`
+      },
+      {
+        name: 'POST /tc-auth/config/email',
+        signature: 'POST /tc-auth/config/email',
+        description: 'Sets or updates SMTP email service configuration settings in application state.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin token.' },
+          { name: 'host', type: 'body (str)', required: true, description: 'SMTP server host.' },
+          { name: 'port', type: 'body (int)', required: true, description: 'SMTP port (587 or 465).' },
+          { name: 'username', type: 'body (str)', required: true, description: 'SMTP account username.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'SMTP password.' },
+          { name: 'sender', type: 'body (str)', required: true, description: 'Default sender email address.' },
+          { name: 'sender_name', type: 'body (str)', required: false, description: 'Sender display header name.' },
+          { name: 'use_tls', type: 'body (bool)', required: false, default: 'true', description: 'Enable TLS connection.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'POST /tc-auth/config/github',
+        signature: 'POST /tc-auth/config/github',
+        description: 'Configures GitHub OAuth App Client ID, Client Secret, and Callback Redirect URI.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin token.' },
+          { name: 'client_id', type: 'body (str)', required: true, description: 'GitHub App Client ID.' },
+          { name: 'client_secret', type: 'body (str)', required: true, description: 'GitHub App Client Secret.' },
+          { name: 'redirect_uri', type: 'body (str)', required: true, description: 'Authorized Callback Redirect URI.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'POST /tc-auth/config/google',
+        signature: 'POST /tc-auth/config/google',
+        description: 'Configures Google Cloud OAuth Client ID, Client Secret, and Callback Redirect URI.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin token.' },
+          { name: 'client_id', type: 'body (str)', required: true, description: 'Google OAuth Client ID.' },
+          { name: 'client_secret', type: 'body (str)', required: true, description: 'Google OAuth Client Secret.' },
+          { name: 'redirect_uri', type: 'body (str)', required: true, description: 'Authorized Redirect URI.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'POST /tc-auth/config/jwt',
+        signature: 'POST /tc-auth/config/jwt',
+        description: 'Configures JWT signing secret key, cryptographic algorithm, and active session duration in days.',
+        parameters: [
+          { name: 'Authorization', type: 'header (str)', required: true, description: 'Superadmin token.' },
+          { name: 'secret_key', type: 'body (str)', required: true, description: 'JWT signing secret key.' },
+          { name: 'algorithm', type: 'body (str)', required: false, default: '"HS256"', description: 'Signing algorithm.' },
+          { name: 'session_duration_days', type: 'body (int)', required: false, default: '7', description: 'Session lifetime in days.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      }
+    ],
+    codeSnippet: `curl -X GET https://api.example.com/tc-auth/config/load/ \\
+  -H "Authorization: Bearer superadmin-secret-token"`
+  },
+  {
+    id: 'dash-account',
+    title: 'Admin Account Routes',
+    module: '/tc-auth/account',
+    description: 'Administrative endpoints for querying, creating, super-updating, and deleting system user accounts.',
+    overview: `Base path: \`/tc-auth/account\`. Authentication required: \`Authorization: Bearer <access_token>\` belonging to an account with the \`superadmin\` role.`,
+    methods: [
+      {
+        name: 'GET /tc-auth/account/',
+        signature: 'GET /tc-auth/account/?page=1&limit=10',
+        description: 'Returns a paginated collection of user account records.',
+        parameters: [
+          { name: 'page', type: 'query (int)', required: false, default: '1', description: 'Page number (minimum: 1).' },
+          { name: 'limit', type: 'query (int)', required: false, default: '10', description: 'Items per page (range: 1-100).' }
+        ],
+        returns: {
+          type: 'Array of Account Objects',
+          description: 'List of account records matching pagination.'
+        },
+        example: `const res = await fetch("https://api.example.com/tc-auth/account/?page=1&limit=10", {
+  headers: { "Authorization": \`Bearer \${adminToken}\` }
+});
+const accounts = await res.json();`
+      },
+      {
+        name: 'GET /tc-auth/account/query',
+        signature: 'GET /tc-auth/account/query?field={FIELD}&value={VALUE}',
+        description: 'Searches user accounts by exact field matching.',
+        parameters: [
+          { name: 'field', type: 'query (str)', required: true, description: 'Search field: "id", "uid", "email", "handle", "name", "phone".' },
+          { name: 'value', type: 'query (str)', required: true, description: 'Value to search for.' }
+        ],
+        returns: {
+          type: 'Array of Account Objects',
+          description: 'Matching user account records list.'
+        }
+      },
+      {
+        name: 'POST /tc-auth/account/',
+        signature: 'POST /tc-auth/account/',
+        description: 'Administrative account creation endpoint with full control over user role and status.',
+        parameters: [
+          { name: 'name', type: 'body (str)', required: true, description: 'Display name.' },
+          { name: 'email', type: 'body (str)', required: true, description: 'Email address.' },
+          { name: 'password', type: 'body (str)', required: true, description: 'Account password.' },
+          { name: 'handle', type: 'body (str)', required: false, description: 'Username handle.' },
+          { name: 'role', type: 'body (str)', required: false, default: '"user"', description: 'Role string ("user", "admin", "superadmin").' },
+          { name: 'status', type: 'body (str)', required: false, default: '"active"', description: 'Account status ("active", "suspended").' }
+        ],
+        returns: {
+          type: 'Account Object',
+          description: 'Created account dictionary.'
+        }
+      },
+      {
+        name: 'PATCH /tc-auth/account/',
+        signature: 'PATCH /tc-auth/account/',
+        description: 'Privileged super update endpoint capable of altering role, status, password, email, and metadata simultaneously.',
+        parameters: [
+          { name: 'account_id', type: 'body (int)', required: true, description: 'Target account numeric ID.' },
+          { name: 'role', type: 'body (str)', required: false, description: 'New authorization role.' },
+          { name: 'status', type: 'body (str)', required: false, description: 'New account status.' },
+          { name: 'password', type: 'body (str)', required: false, description: 'New password (hashed internally).' },
+          { name: 'name', type: 'body (str)', required: false, description: 'Updated display name.' }
+        ],
+        returns: {
+          type: 'Account Object',
+          description: 'Updated account record.'
+        }
+      },
+      {
+        name: 'DELETE /tc-auth/account/',
+        signature: 'DELETE /tc-auth/account/',
+        description: 'Permanently deletes an account record and cascades session/OAuth links from database.',
+        parameters: [
+          { name: 'account_id', type: 'body (int)', required: true, description: 'Numeric ID of target account to delete.' }
+        ],
+        returns: {
+          type: 'null',
+          description: 'Returns null on success.'
+        }
+      }
+    ],
+    codeSnippet: `curl -X DELETE https://api.example.com/tc-auth/account/ \\
+  -H "Authorization: Bearer superadmin-token" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "account_id": 5 }'`
+  },
+  {
+    id: 'dash-oauth',
+    title: 'Admin OAuth Link Routes',
+    module: '/tc-auth/oauth',
+    description: 'Administrative endpoints for inspecting, filtering, manually creating, and removing third-party OAuth links.',
+    overview: `Base path: \`/tc-auth/oauth\`. Requires superadmin authentication header.`,
+    schemas: [
+      {
+        title: 'OAuth Provider Link Record Schema',
+        description: 'Database OAuth link dictionary',
+        json: `{
+  "id": 1,
+  "account_id": 1,
+  "provider": "google",
+  "provider_user_id": "109876543210987654321",
+  "created_at": "2026-08-07T12:00:00"
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'GET /tc-auth/oauth/',
+        signature: 'GET /tc-auth/oauth/?page=1&limit=10',
+        description: 'Returns a paginated list of all active third-party OAuth links.',
+        parameters: [
+          { name: 'page', type: 'query (int)', required: false, default: '1', description: 'Page number.' },
+          { name: 'limit', type: 'query (int)', required: false, default: '10', description: 'Items per page.' }
+        ],
+        returns: {
+          type: 'Array of OAuth Link Objects',
+          description: 'List of OAuth provider links.'
+        }
+      },
+      {
+        name: 'GET /tc-auth/oauth/query',
+        signature: 'GET /tc-auth/oauth/query?field={FIELD}&value={VALUE}',
+        description: 'Searches OAuth links by field ("id", "provider_id", "account_id").',
+        parameters: [
+          { name: 'field', type: 'query (str)', required: true, description: 'Field name.' },
+          { name: 'value', type: 'query (str)', required: true, description: 'Target search value.' }
+        ],
+        returns: {
+          type: 'Array of OAuth Link Objects',
+          description: 'Matching OAuth records list.'
+        }
+      },
+      {
+        name: 'POST /tc-auth/oauth/',
+        signature: 'POST /tc-auth/oauth/',
+        description: 'Manually links a third-party OAuth provider user ID to an existing local account.',
+        parameters: [
+          { name: 'account_id', type: 'body (int)', required: true, description: 'Numeric ID of local account.' },
+          { name: 'provider', type: 'body (str)', required: true, description: 'Provider name ("google", "github").' },
+          { name: 'provider_user_id', type: 'body (str)', required: true, description: 'Provider unique user identifier.' }
+        ],
+        returns: {
+          type: 'OAuth Link Object',
+          description: 'Created OAuth link dictionary.'
+        }
+      },
+      {
+        name: 'DELETE /tc-auth/oauth/',
+        signature: 'DELETE /tc-auth/oauth/',
+        description: 'Unlinks an OAuth provider from a local user account.',
+        parameters: [
+          { name: 'account_id', type: 'body (int)', required: true, description: 'Numeric account ID.' },
+          { name: 'provider', type: 'body (str)', required: true, description: 'Provider name string ("google", "github").' }
+        ],
+        returns: {
+          type: 'null',
+          description: 'Returns null on success.'
+        }
+      }
+    ],
+    codeSnippet: `curl -X POST https://api.example.com/tc-auth/oauth/ \\
+  -H "Authorization: Bearer superadmin-token" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "account_id": 1,
+    "provider": "github",
+    "provider_user_id": "12345678"
+  }'`
+  },
+  {
+    id: 'dash-otp',
+    title: 'Admin OTP Management Routes',
+    module: '/tc-auth/otp',
+    description: 'Administrative endpoints for generating raw One-Time Passwords, inspecting active OTPs, revoking codes, and purging expired records.',
+    overview: `Base path: \`/tc-auth/otp\`. Requires superadmin authentication. Note: POST /tc-auth/otp/ creates and returns the raw unhashed OTP string and should only be invoked in trusted administrative tools.`,
+    schemas: [
+      {
+        title: 'OTP Database Record Schema',
+        description: 'Active OTP database entry dictionary',
+        json: `{
+  "id": 1,
+  "identifier": "jane@example.com",
+  "purpose": "login",
+  "code_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "attempts": 0,
+  "expires_at": "2026-08-07T12:05:00",
+  "created_at": "2026-08-07T12:00:00"
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'GET /tc-auth/otp/',
+        signature: 'GET /tc-auth/otp/?page=1&limit=10',
+        description: 'Returns a paginated list of OTP database records.',
+        parameters: [
+          { name: 'page', type: 'query (int)', required: false, default: '1', description: 'Page number.' },
+          { name: 'limit', type: 'query (int)', required: false, default: '10', description: 'Items per page.' }
+        ],
+        returns: {
+          type: 'Array of OTP Records',
+          description: 'List of active/historical OTP entries.'
+        }
+      },
+      {
+        name: 'GET /tc-auth/otp/query',
+        signature: 'GET /tc-auth/otp/query?identifier={IDENTIFIER}',
+        description: 'Looks up active OTP records by target identifier (email address or phone number).',
+        parameters: [
+          { name: 'identifier', type: 'query (str)', required: true, description: 'Target email address or phone string.' }
+        ],
+        returns: {
+          type: 'Array of OTP Records',
+          description: 'Matching OTP entries.'
+        }
+      },
+      {
+        name: 'POST /tc-auth/otp/',
+        signature: 'POST /tc-auth/otp/',
+        description: 'Generates an OTP code for an identifier and purpose, returning the raw OTP code directly in response.',
+        parameters: [
+          { name: 'identifier', type: 'body (str)', required: true, description: 'Recipient email or phone.' },
+          { name: 'purpose', type: 'body (str)', required: true, description: 'OTP purpose ("login", "signup", "reset").' },
+          { name: 'expiry', type: 'body (int)', required: false, default: '300', description: 'Validity duration in seconds.' }
+        ],
+        returns: {
+          type: 'JSON Object',
+          description: '{"otp": "123456", "expires_at": 1735689600}'
+        }
+      },
+      {
+        name: 'DELETE /tc-auth/otp/',
+        signature: 'DELETE /tc-auth/otp/',
+        description: 'Revokes active OTP record for a given identifier and purpose.',
+        parameters: [
+          { name: 'identifier', type: 'body (str)', required: true, description: 'Identifier string.' },
+          { name: 'purpose', type: 'body (str)', required: true, description: 'Purpose key string.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'DELETE /tc-auth/otp/cleanup',
+        signature: 'DELETE /tc-auth/otp/cleanup',
+        description: 'Deletes all expired OTP records from database.',
+        parameters: [],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'DELETE /tc-auth/otp/clear',
+        signature: 'DELETE /tc-auth/otp/clear',
+        description: 'Immediately purges ALL OTP records from database.',
+        parameters: [],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      }
+    ],
+    codeSnippet: `curl -X DELETE https://api.example.com/tc-auth/otp/cleanup \\
+  -H "Authorization: Bearer superadmin-token"`
+  },
+  {
+    id: 'dash-session',
+    title: 'Admin Session Management Routes',
+    module: '/tc-auth/session',
+    description: 'Administrative endpoints for inspecting active sessions, destroying individual sessions, revoking all user sessions, and purging session records.',
+    overview: `Base path: \`/tc-auth/session\`. Requires superadmin authorization. Security Notice: Session records store client IP addresses and User-Agent metadata.`,
+    schemas: [
+      {
+        title: 'Active Session Database Schema',
+        description: 'Session database object',
+        json: `{
+  "id": 9,
+  "account_id": 1,
+  "token_hash": "da4c0342fb73e2b5f7e03bf6adaa02b9bd2a45b8d535b1cee9f675e75e40df7d",
+  "ip_address": "203.0.113.10",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+  "expires_at": "2026-08-08T12:00:00",
+  "created_at": "2026-08-07T12:00:00"
+}`
+      }
+    ],
+    methods: [
+      {
+        name: 'GET /tc-auth/session/',
+        signature: 'GET /tc-auth/session/?page=1&limit=10',
+        description: 'Returns a paginated list of active server-side session records.',
+        parameters: [
+          { name: 'page', type: 'query (int)', required: false, default: '1', description: 'Page number.' },
+          { name: 'limit', type: 'query (int)', required: false, default: '10', description: 'Items per page.' }
+        ],
+        returns: {
+          type: 'Array of Session Records',
+          description: 'Active session entries.'
+        }
+      },
+      {
+        name: 'GET /tc-auth/session/query',
+        signature: 'GET /tc-auth/session/query?field={FIELD}&value={VALUE}',
+        description: 'Searches session records by field ("id", "sid", "token", "ip"). Supports partial IP matching.',
+        parameters: [
+          { name: 'field', type: 'query (str)', required: true, description: 'Field name.' },
+          { name: 'value', type: 'query (str)', required: true, description: 'Query value.' }
+        ],
+        returns: {
+          type: 'Array of Session Records',
+          description: 'Matching session entries list.'
+        }
+      },
+      {
+        name: 'DELETE /tc-auth/session/',
+        signature: 'DELETE /tc-auth/session/',
+        description: 'Destroys a single specific active session by numeric session ID.',
+        parameters: [
+          { name: 'session_id', type: 'body (int)', required: true, description: 'Numeric session ID to terminate.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'DELETE /tc-auth/session/all',
+        signature: 'DELETE /tc-auth/session/all',
+        description: 'Destroys all active sessions belonging to a specific user account ID (forces logout across all devices).',
+        parameters: [
+          { name: 'account_id', type: 'body (int)', required: true, description: 'Numeric user account ID.' }
+        ],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'DELETE /tc-auth/session/cleanup',
+        signature: 'DELETE /tc-auth/session/cleanup',
+        description: 'Deletes all expired session records from database.',
+        parameters: [],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      },
+      {
+        name: 'DELETE /tc-auth/session/clear',
+        signature: 'DELETE /tc-auth/session/clear',
+        description: 'Immediately purges ALL active session records from database.',
+        parameters: [],
+        returns: { type: 'null', description: 'Returns null on success.' }
+      }
+    ],
+    codeSnippet: `curl -X DELETE https://api.example.com/tc-auth/session/all \\
+  -H "Authorization: Bearer superadmin-token" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "account_id": 1 }'`
+  },
+  {
+    id: 'system-route',
+    title: 'System Routes Placeholder',
+    module: 'tc_auth.api.system_route',
+    description: 'Internal system route module reserved for platform extensions and automated background hooks.',
+    overview: `The module \`tc_auth/api/system_route.py\` is reserved for internal framework lifecycle hooks and background health monitors.`,
+    content: `Currently, no public API routes are declared under system_route.py. Additional endpoints will be added here as system requirements evolve.`,
+    codeSnippet: `# tc_auth/api/system_route.py
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/system", tags=["System"])
+# System extensions will be attached here.`
   }
 ];
+
+export const API_DOCS_PLACEHOLDER = API_DOCS;
+

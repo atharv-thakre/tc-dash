@@ -20,7 +20,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react';
-import { DocItem, MethodSpec, LIBRARY_DOCS, API_DOCS_PLACEHOLDER } from '../data/docsData';
+import { DocItem, MethodSpec, LIBRARY_DOCS, API_DOCS } from '../data/docsData';
 import { Badge } from '../components/common/Badge';
 import { toast } from 'sonner';
 
@@ -32,7 +32,7 @@ interface DocsPageProps {
 
 export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'setup', onNavigate }) => {
   const [activeCategory, setActiveCategory] = useState<'lib' | 'api'>(section === 'api' ? 'api' : 'lib');
-  const [activeDocId, setActiveDocId] = useState<string>(docId || (section === 'api' ? 'api-overview' : 'setup'));
+  const [activeDocId, setActiveDocId] = useState<string>(docId || (section === 'api' ? 'login-routes' : 'setup'));
   const [searchQuery, setSearchQuery] = useState('');
   const [methodSearch, setMethodSearch] = useState('');
   const [copiedText, setCopiedText] = useState<string | null>(null);
@@ -42,15 +42,15 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
     if (section === 'api') {
       setActiveCategory('api');
       if (docId) setActiveDocId(docId);
-      else setActiveDocId('api-overview');
+      else setActiveDocId('login-routes');
     } else {
       setActiveCategory('lib');
       if (docId) setActiveDocId(docId);
-      else if (!activeDocId || activeDocId === 'api-overview') setActiveDocId('setup');
+      else if (!activeDocId || activeDocId === 'api-overview' || activeDocId === 'login-routes') setActiveDocId('setup');
     }
   }, [section, docId]);
 
-  const currentDocs = activeCategory === 'api' ? API_DOCS_PLACEHOLDER : LIBRARY_DOCS;
+  const currentDocs = activeCategory === 'api' ? API_DOCS : LIBRARY_DOCS;
 
   const filteredDocs = currentDocs.filter(
     (doc) =>
@@ -202,7 +202,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
                   </Badge>
                   <span className="text-xs text-slate-400 dark:text-zinc-500 flex items-center gap-1.5 font-medium">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                    Internal Python Library
+                    {activeCategory === 'api' ? 'REST API Endpoint Specification' : 'Internal Python Library'}
                   </span>
                 </div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -348,15 +348,31 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
                                 <span className="text-sm font-black text-slate-900 dark:text-white font-mono">
                                   {method.name}
                                 </span>
-                                {method.isAsync ? (
-                                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                                    <Zap className="w-3 h-3" /> ASYNC
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                                    SYNC
-                                  </span>
-                                )}
+                                {(() => {
+                                  const verb = method.name.split(' ')[0].toUpperCase();
+                                  if (['GET', 'POST', 'PATCH', 'DELETE', 'PUT'].includes(verb)) {
+                                    let badgeColor = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+                                    if (verb === 'GET') badgeColor = 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
+                                    if (verb === 'POST') badgeColor = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+                                    if (verb === 'PATCH') badgeColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+                                    if (verb === 'DELETE') badgeColor = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+                                    if (verb === 'PUT') badgeColor = 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+                                    return (
+                                      <span className={`px-2 py-0.5 text-[10px] font-mono font-black rounded-md border ${badgeColor}`}>
+                                        {verb}
+                                      </span>
+                                    );
+                                  }
+                                  return method.isAsync ? (
+                                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                                      <Zap className="w-3 h-3" /> ASYNC
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                      SYNC
+                                    </span>
+                                  );
+                                })()}
                               </div>
 
                               <button

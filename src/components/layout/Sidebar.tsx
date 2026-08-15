@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import { Badge } from '../common/Badge';
-import { LIBRARY_DOCS } from '../../data/docsData';
+import { LIBRARY_DOCS, API_DOCS } from '../../data/docsData';
 
 interface SidebarProps {
   activePath: string;
@@ -125,7 +125,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={() => {
                       setIsApiOpen(!isApiOpen);
-                      handleNavClick('/docs/api/api-overview');
+                      if (!activePath.startsWith('/docs/api')) {
+                        handleNavClick(`/docs/api/${API_DOCS[0].id}`);
+                      }
                     }}
                     className={cn(
                       'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border border-transparent cursor-pointer',
@@ -135,12 +137,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <Terminal className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-                      <span>API Docs</span>
+                      <Terminal className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>REST API (api)</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
-                        Soon
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-indigo-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-300 font-bold">
+                        {API_DOCS.length}
                       </span>
                       {isApiOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                     </div>
@@ -148,17 +150,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {isApiOpen && (
                     <div className="pl-4 space-y-0.5 border-l border-slate-200 dark:border-zinc-800 ml-3 py-1">
-                      <button
-                        onClick={() => handleNavClick('/docs/api/api-overview')}
-                        className={cn(
-                          'block w-full text-left px-2 py-1 text-[11px] rounded-md transition-all font-mono truncate cursor-pointer',
-                          activePath === '/docs/api/api-overview'
-                            ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/50 dark:bg-zinc-900'
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
-                        )}
-                      >
-                        • REST API Overview
-                      </button>
+                      {API_DOCS.map((doc) => {
+                        const targetPath = `/docs/api/${doc.id}`;
+                        const isActive = activePath === targetPath;
+                        return (
+                          <button
+                            key={doc.id}
+                            onClick={() => handleNavClick(targetPath)}
+                            className={cn(
+                              'block w-full text-left px-2 py-1 text-[11px] rounded-md transition-all font-mono truncate cursor-pointer',
+                              isActive
+                                ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/50 dark:bg-zinc-900'
+                                : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                            )}
+                          >
+                            • {doc.title}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
