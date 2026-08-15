@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { Shield, KeyRound, Terminal, Sliders, BookOpen, Sparkles, User, LogIn } from 'lucide-react';
+import { KeyRound, Sliders, BookOpen, Sparkles, LogIn, Server } from 'lucide-react';
+import { ApiConfigModal } from '../common/ApiConfigModal';
 
 interface DockItemProps {
   mouseX: ReturnType<typeof useMotionValue>;
@@ -52,30 +53,45 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
 interface FloatingDockProps {
   onNavigate: (path: string) => void;
   onLaunchDemo?: () => void;
+  onOpenConfig?: () => void;
   className?: string;
 }
 
 export const FloatingDock: React.FC<FloatingDockProps> = ({
   onNavigate,
   onLaunchDemo,
+  onOpenConfig,
   className = '',
 }) => {
   const mouseX = useMotionValue(Infinity);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
-  const dockItems = [
+  const handleOpenConfig = () => {
+    if (onOpenConfig) {
+      onOpenConfig();
+    } else {
+      setIsConfigOpen(true);
+    }
+  };
+
+  const dockItems: Array<{
+    title: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+    badge?: string;
+    active?: boolean;
+  }> = [
+    {
+      title: 'Enter Demo Mode',
+      icon: <Sparkles className="w-4 h-4 text-amber-400" />,
+      onClick: onLaunchDemo || (() => onNavigate('/dashboard')),
+      badge: 'Demo',
+    },
     {
       title: 'Explore Overview',
       icon: <KeyRound className="w-4 h-4" />,
       onClick: () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      },
-    },
-    {
-      title: 'Interactive CLI Terminal',
-      icon: <Terminal className="w-4 h-4" />,
-      onClick: () => {
-        const el = document.getElementById('terminal-section');
-        el?.scrollIntoView({ behavior: 'smooth' });
       },
     },
     {
@@ -87,47 +103,47 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
       },
     },
     {
-      title: 'Architecture Blueprint',
-      icon: <Shield className="w-4 h-4" />,
-      onClick: () => {
-        const el = document.getElementById('architecture');
-        el?.scrollIntoView({ behavior: 'smooth' });
-      },
-    },
-    {
       title: 'Python SDK Docs',
       icon: <BookOpen className="w-4 h-4" />,
       onClick: () => onNavigate('/docs/lib/setup'),
     },
     {
-      title: 'Launch Superadmin Demo',
-      icon: <Sparkles className="w-4 h-4 text-amber-400" />,
-      onClick: onLaunchDemo || (() => onNavigate('/dashboard')),
-      badge: 'Live',
+      title: 'Configure Server URL',
+      icon: <Server className="w-4 h-4 text-emerald-400" />,
+      onClick: handleOpenConfig,
+    },
+    {
+      title: 'Sign In to Console',
+      icon: <LogIn className="w-4 h-4 text-indigo-400" />,
+      onClick: () => onNavigate('/login'),
     },
   ];
 
   return (
-    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ${className}`}>
-      <motion.div
-        onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-3xl bg-zinc-950/80 border border-zinc-800/80 backdrop-blur-xl shadow-2xl shadow-indigo-950/20"
-      >
-        {dockItems.map((item, i) => (
-          <DockIcon
-            key={i}
-            mouseX={mouseX}
-            title={item.title}
-            icon={item.icon}
-            onClick={item.onClick}
-            badge={item.badge}
-          />
-        ))}
-      </motion.div>
-    </div>
+    <>
+      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ${className}`}>
+        <motion.div
+          onMouseMove={(e) => mouseX.set(e.pageX)}
+          onMouseLeave={() => mouseX.set(Infinity)}
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-3xl bg-zinc-950/80 border border-zinc-800/80 backdrop-blur-xl shadow-2xl shadow-indigo-950/20"
+        >
+          {dockItems.map((item, i) => (
+            <DockIcon
+              key={i}
+              mouseX={mouseX}
+              title={item.title}
+              icon={item.icon}
+              onClick={item.onClick}
+              badge={item.badge}
+            />
+          ))}
+        </motion.div>
+      </div>
+
+      <ApiConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+    </>
   );
 };

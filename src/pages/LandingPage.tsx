@@ -51,14 +51,16 @@ import { AnimatedCounter } from '../components/reactbits/AnimatedCounter';
 import { InteractiveTerminal } from '../components/reactbits/InteractiveTerminal';
 import { ArchitectureFlow } from '../components/reactbits/ArchitectureFlow';
 import { FloatingDock } from '../components/reactbits/FloatingDock';
+import { FeatureBentoHub } from '../components/reactbits/FeatureBentoHub';
 import { PlaygroundShowcase } from '../components/reactbits/PlaygroundShowcase';
+import { ComparisonMatrix } from '../components/reactbits/ComparisonMatrix';
 
 interface LandingPageProps {
   onNavigate: (path: string) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
-  const { account, login } = useAuth();
+  const { account, loginPassword } = useAuth();
   const { apiMode, setApiMode } = useApiConfig();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -72,10 +74,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
-  const handleLaunchDemo = () => {
+  const handleLaunchDemo = async () => {
     setApiMode('demo');
-    login('superadmin@tcauth.dev', 'superadmin123', true);
-    toast.success('Launched Live Demo Console as Superadmin!');
+    try {
+      await loginPassword({
+        identifier: 'admin@tcauth.dev',
+        password: 'password123',
+      });
+      toast.success('Launched Live Demo Console as Superadmin!');
+    } catch {
+      // If direct login encounters any issue, continue navigation to dashboard in demo mode
+    }
     onNavigate('/dashboard');
   };
 
@@ -233,12 +242,6 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Live API Mode Badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border border-zinc-800 bg-zinc-900/80 text-zinc-400">
-              <span className={`w-1.5 h-1.5 rounded-full ${apiMode === 'demo' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
-              <span className="capitalize whitespace-nowrap">{apiMode} Mode</span>
-            </div>
-
             {account ? (
               <Magnet magnetStrength={0.2}>
                 <button
@@ -255,7 +258,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                   <button
                     onClick={handleLaunchDemo}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer whitespace-nowrap"
-                    title="Test dashboard immediately with sample data"
+                    title="Launch instant live demo"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>Try Demo</span>
@@ -264,7 +267,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
                 <button
                   onClick={() => onNavigate('/login')}
-                  className="hidden sm:inline-flex px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all cursor-pointer whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all cursor-pointer whitespace-nowrap"
                 >
                   Sign In
                 </button>
@@ -272,7 +275,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.2}>
                   <button
                     onClick={() => onNavigate('/signup')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap"
+                    className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/25 transition-all cursor-pointer whitespace-nowrap"
                   >
                     <span>Get Started</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -447,7 +450,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.3}>
                   <button
                     onClick={handleLaunchDemo}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 shadow-lg shadow-amber-950/30 transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 shadow-lg shadow-amber-950/30 transition-all cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     <span>Try Live Demo</span>
@@ -458,7 +461,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.3}>
                   <button
                     onClick={() => onNavigate('/login')}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-500/25 transition-all cursor-pointer"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Sign In to Console</span>
@@ -469,9 +472,9 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.3}>
                   <button
                     onClick={() => onNavigate('/signup')}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-zinc-900 border border-zinc-800 text-zinc-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-zinc-900 border border-zinc-700/80 text-zinc-100 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer shadow-md"
                   >
-                    <UserPlus className="w-4 h-4 text-purple-400" />
+                    <UserPlus className="w-4 h-4 text-indigo-400" />
                     <span>Create Account</span>
                   </button>
                 </Magnet>
@@ -642,7 +645,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
           </div>
         </section>
 
-        {/* CORE PILLARS / FEATURES BENTO GRID WITH SPOTLIGHT & 3D TILT */}
+        {/* CORE PILLARS / BENTO ARCHITECTURE HUB */}
         <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-zinc-800/80">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
             <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-950/60 border border-indigo-800/60">
@@ -652,156 +655,11 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               Engineered for Modern Security & DX
             </h2>
             <p className="text-sm text-zinc-400">
-              Everything you need to ship secure authentication, user management, and session control without third-party vendor lock-in.
+              Interactive architecture widgets showing stateful session control, multi-strategy identity providers, and granular RBAC scopes.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature 1: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(99, 102, 241, 0.2)" borderColor="rgba(99, 102, 241, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-950/70 border border-indigo-800/80 flex items-center justify-center text-indigo-400 shadow-md shadow-indigo-950/50">
-                    <Shield className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-indigo-300 bg-indigo-950/60 border border-indigo-800/60">
-                    Auth Strategies
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Multi-Strategy Authentication
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Support bcrypt-hashed passwords, passwordless 6-digit email OTPs, Google OpenID Connect, and GitHub OAuth 2.0 within a single unified account system.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Bcrypt</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Email OTP</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-indigo-300 bg-indigo-950/50 border border-indigo-800/50">Google / GitHub</span>
-              </div>
-            </SpotlightCard>
-
-            {/* Feature 2: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(168, 85, 247, 0.2)" borderColor="rgba(168, 85, 247, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-purple-950/70 border border-purple-800/80 flex items-center justify-center text-purple-400 shadow-md shadow-purple-950/50">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-purple-300 bg-purple-950/60 border border-purple-800/60">
-                    Session Security
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Stateful JWT Sessions
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Every issued token contains a database-backed session ID (<code className="font-mono text-indigo-300 text-xs">sid</code>). Revoke compromised devices instantly without waiting for JWT expiration.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-purple-300 bg-purple-950/50 border border-purple-800/50">&lt; 1ms Revocation</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Multi-Device</span>
-              </div>
-            </SpotlightCard>
-
-            {/* Feature 3: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(16, 185, 129, 0.2)" borderColor="rgba(16, 185, 129, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-950/70 border border-emerald-800/80 flex items-center justify-center text-emerald-400 shadow-md shadow-emerald-950/50">
-                    <Zap className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-emerald-300 bg-emerald-950/60 border border-emerald-800/60">
-                    Pythonic DX
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Pure Python SDK Architecture
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Clean, modular class structure (<code className="font-mono text-emerald-300 text-xs">auth.account</code>, <code className="font-mono text-emerald-300 text-xs">auth.otp</code>, <code className="font-mono text-emerald-300 text-xs">auth.session</code>) designed for FastAPI and SQLAlchemy.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-emerald-300 bg-emerald-950/50 border border-emerald-800/50">SQLAlchemy ORM</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Pydantic Schemas</span>
-              </div>
-            </SpotlightCard>
-
-            {/* Feature 4: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(245, 158, 11, 0.2)" borderColor="rgba(245, 158, 11, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-amber-950/70 border border-amber-800/80 flex items-center justify-center text-amber-400 shadow-md shadow-amber-950/50">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-amber-300 bg-amber-950/60 border border-amber-800/60">
-                    Access Control
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Granular Role Hierarchy (RBAC)
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Built-in <code className="font-mono text-amber-300 text-xs">user</code>, <code className="font-mono text-indigo-300 text-xs">admin</code>, and <code className="font-mono text-purple-300 text-xs">superadmin</code> authorization tiers with route guards and privilege escalation prevention.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-amber-300 bg-amber-950/50 border border-amber-800/50">3-Tier RBAC</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Route Guards</span>
-              </div>
-            </SpotlightCard>
-
-            {/* Feature 5: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(14, 165, 233, 0.2)" borderColor="rgba(14, 165, 233, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-sky-950/70 border border-sky-800/80 flex items-center justify-center text-sky-400 shadow-md shadow-sky-950/50">
-                    <Mail className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-sky-300 bg-sky-950/60 border border-sky-800/60">
-                    Passwordless
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Built-in Email OTP Engine
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Direct SMTP integration for dispatching time-limited verification codes, signup confirmations, and password resets with rate limits and attempt tracking.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-sky-300 bg-sky-950/50 border border-sky-800/50">SMTP Ready</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Brute-Force Guard</span>
-              </div>
-            </SpotlightCard>
-
-            {/* Feature 6: SpotlightCard */}
-            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(236, 72, 153, 0.2)" borderColor="rgba(236, 72, 153, 0.5)">
-              <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-pink-950/70 border border-pink-800/80 flex items-center justify-center text-pink-400 shadow-md shadow-pink-950/50">
-                    <Sliders className="w-6 h-6" />
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-pink-300 bg-pink-950/60 border border-pink-800/60">
-                    Admin Portal
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
-                  Real-Time Admin Control Panel
-                </h3>
-                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  Interactive web dashboard for auditing active sessions, inspecting user accounts, managing OAuth providers, and updating SMTP configurations at runtime.
-                </p>
-              </div>
-              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-pink-300 bg-pink-950/50 border border-pink-800/50">Live Telemetry</span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">One-Click Revoke</span>
-              </div>
-            </SpotlightCard>
-          </div>
+          <FeatureBentoHub onNavigateDocs={() => onNavigate('/docs/lib/setup')} />
         </section>
 
         {/* INTERACTIVE PLAYGROUND TESTER */}
@@ -838,64 +696,9 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
           <ArchitectureFlow />
 
-          {/* Comparison Matrix Table */}
-          <div className="max-w-4xl mx-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm overflow-hidden mt-16">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-950/60 text-zinc-400 font-mono uppercase text-[10px]">
-                    <th className="py-3.5 px-4 font-bold">Feature</th>
-                    <th className="py-3.5 px-4 font-bold text-indigo-400 bg-indigo-950/30">
-                      tc_auth v1.5.0
-                    </th>
-                    <th className="py-3.5 px-4 font-bold">Custom Auth Code</th>
-                    <th className="py-3.5 px-4 font-bold">Heavy Auth SaaS (Auth0/Okta)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
-                  <tr>
-                    <td className="py-3 px-4 font-semibold">Self-Hosted & Zero Lock-in</td>
-                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" /> 100% On-Prem / Cloud
-                    </td>
-                    <td className="py-3 px-4 text-zinc-500">Yes (requires maintenance)</td>
-                    <td className="py-3 px-4 text-rose-500 font-medium">No (Strictly Locked-In)</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-4 font-semibold">Stateful Active Session Revocation</td>
-                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
-                      Instant single & all-device purge
-                    </td>
-                    <td className="py-3 px-4 text-zinc-500">Complex to build properly</td>
-                    <td className="py-3 px-4 text-zinc-500">Supported</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-4 font-semibold">Drop-in Python SDK API</td>
-                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
-                      Unified <code className="font-mono text-[10px]">Auth</code> class
-                    </td>
-                    <td className="py-3 px-4 text-zinc-500">Hundreds of manual lines</td>
-                    <td className="py-3 px-4 text-zinc-500">Requires SDK boilerplate</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-4 font-semibold">Live Admin Control Panel UI</td>
-                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
-                      Included with live audit metrics
-                    </td>
-                    <td className="py-3 px-4 text-rose-500 font-medium">Must build from scratch</td>
-                    <td className="py-3 px-4 text-zinc-500">Included</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 px-4 font-semibold">Cost / MAU Limits</td>
-                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
-                      Free & Open-Source (Unlimited)
-                    </td>
-                    <td className="py-3 px-4 text-zinc-500">Free (High Dev Cost)</td>
-                    <td className="py-3 px-4 text-rose-500 font-medium">$$$ Per Active User</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          {/* Comparison Matrix Component */}
+          <div className="mt-16">
+            <ComparisonMatrix onGetStarted={() => onNavigate('/signup')} />
           </div>
         </section>
 
@@ -950,15 +753,14 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               </p>
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={handleLaunchDemo}
-                  className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition-all cursor-pointer flex items-center justify-center gap-1"
+                  onClick={() => onNavigate('/signup')}
+                  className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-all cursor-pointer text-center"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Try Demo</span>
+                  Create Account
                 </button>
                 <button
                   onClick={() => onNavigate('/login')}
-                  className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
+                  className="flex-1 py-2.5 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer text-center"
                 >
                   Sign In →
                 </button>
@@ -977,7 +779,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 Ready to Secure Your Python Application?
               </h2>
               <p className="text-sm text-indigo-200/80 leading-relaxed">
-                Take complete ownership of your authentication layer. Try the live demo, sign into your control panel, or explore the documentation.
+                Take complete ownership of your authentication layer. Sign into your control panel, create an account, or explore the documentation.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <Magnet magnetStrength={0.25}>
@@ -1002,7 +804,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.25}>
                   <button
                     onClick={() => onNavigate('/signup')}
-                    className="px-5 py-3 rounded-xl text-xs font-bold bg-indigo-800/60 hover:bg-indigo-800 border border-indigo-700 text-white transition-all cursor-pointer"
+                    className="px-6 py-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition-all cursor-pointer"
                   >
                     Create Account
                   </button>
