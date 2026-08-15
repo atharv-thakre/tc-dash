@@ -29,7 +29,8 @@ import {
   Radio,
   Server,
   Activity,
-  Globe
+  Globe,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApiConfig } from '../contexts/ApiConfigContext';
@@ -39,7 +40,7 @@ import { toast } from 'sonner';
 import { ShinyText } from '../components/reactbits/ShinyText';
 import { DecryptedText } from '../components/reactbits/DecryptedText';
 import { SplitText } from '../components/reactbits/SplitText';
-import { TrueFocus } from '../components/reactbits/TrueFocus';
+import { FeaturePills } from '../components/reactbits/FeaturePills';
 import { SpotlightCard } from '../components/reactbits/SpotlightCard';
 import { TiltedCard } from '../components/reactbits/TiltedCard';
 import { BorderBeam } from '../components/reactbits/BorderBeam';
@@ -59,6 +60,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const { account, login } = useAuth();
   const { apiMode, setApiMode } = useApiConfig();
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [activeCodeTab, setActiveCodeTab] = useState<'init' | 'otp' | 'sessions' | 'rest'>('init');
 
@@ -216,75 +218,75 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
       </div>
 
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('/')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20 text-white">
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          {/* Brand Logo & Version */}
+          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => onNavigate('/')}>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/25 text-white">
               <KeyRound className="w-5 h-5" />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <span className="text-lg font-black tracking-tight text-white flex items-center">
                 tc<span className="text-indigo-400">-</span>auth
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800/60 rounded-md">
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-800/70 rounded-md whitespace-nowrap shadow-xs">
                 <DecryptedText text="v1.5.0" speed={40} maxIterations={8} animateOn="hover" />
               </span>
             </div>
           </div>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-400">
-            <a href="#features" className="hover:text-indigo-400 transition-colors">
+          {/* Center Navigation Links - Desktop */}
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-semibold text-zinc-400">
+            <a href="#features" className="hover:text-indigo-400 transition-colors whitespace-nowrap">
               Features
             </a>
-            <a href="#terminal-section" className="hover:text-indigo-400 transition-colors">
+            <a href="#terminal-section" className="hover:text-indigo-400 transition-colors whitespace-nowrap">
               CLI Shell
             </a>
-            <a href="#playground" className="hover:text-indigo-400 transition-colors">
+            <a href="#playground" className="hover:text-indigo-400 transition-colors whitespace-nowrap">
               Live Playground
             </a>
-            <a href="#architecture" className="hover:text-indigo-400 transition-colors">
+            <a href="#architecture" className="hover:text-indigo-400 transition-colors whitespace-nowrap">
               Architecture
             </a>
             <button
               onClick={() => onNavigate('/docs/lib/setup')}
-              className="hover:text-indigo-400 transition-colors cursor-pointer"
+              className="hover:text-indigo-400 transition-colors cursor-pointer whitespace-nowrap"
             >
               Python Docs
             </button>
             <button
               onClick={() => onNavigate('/docs/api/login-routes')}
-              className="hover:text-indigo-400 transition-colors cursor-pointer"
+              className="hover:text-indigo-400 transition-colors cursor-pointer whitespace-nowrap"
             >
               REST API
             </button>
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Live API Mode Badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border border-zinc-800 bg-zinc-900/60 text-zinc-400">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border border-zinc-800 bg-zinc-900/80 text-zinc-400">
               <span className={`w-1.5 h-1.5 rounded-full ${apiMode === 'demo' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
-              <span className="capitalize">{apiMode} Mode</span>
+              <span className="capitalize whitespace-nowrap">{apiMode} Mode</span>
             </div>
 
             {account ? (
               <Magnet magnetStrength={0.2}>
                 <button
                   onClick={() => onNavigate('/dashboard')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap"
                 >
                   <span>Open Dashboard</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </Magnet>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Magnet magnetStrength={0.2}>
                   <button
                     onClick={handleLaunchDemo}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer whitespace-nowrap"
                     title="Test dashboard immediately with sample data"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -294,7 +296,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
                 <button
                   onClick={() => onNavigate('/login')}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all cursor-pointer"
+                  className="hidden sm:inline-flex px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all cursor-pointer whitespace-nowrap"
                 >
                   Sign In
                 </button>
@@ -302,7 +304,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <Magnet magnetStrength={0.2}>
                   <button
                     onClick={() => onNavigate('/signup')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap"
                   >
                     <span>Get Started</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -310,8 +312,95 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 </Magnet>
               </div>
             )}
+
+            {/* Mobile Menu Toggle Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-zinc-400 hover:text-white rounded-lg lg:hidden hover:bg-zinc-900 border border-zinc-800 ml-1"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-xl px-4 py-4 space-y-3 overflow-hidden"
+            >
+              <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-300">
+                <a
+                  href="#features"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800"
+                >
+                  Features
+                </a>
+                <a
+                  href="#terminal-section"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800"
+                >
+                  CLI Shell
+                </a>
+                <a
+                  href="#playground"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800"
+                >
+                  Live Playground
+                </a>
+                <a
+                  href="#architecture"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800"
+                >
+                  Architecture
+                </a>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onNavigate('/docs/lib/setup');
+                  }}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800 text-left"
+                >
+                  Python Docs
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onNavigate('/docs/api/login-routes');
+                  }}
+                  className="p-2.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-900 hover:text-indigo-400 border border-zinc-800 text-left"
+                >
+                  REST API
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onNavigate('/login');
+                  }}
+                  className="text-xs font-bold text-zinc-300 hover:text-white py-2"
+                >
+                  Sign In
+                </button>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono border border-zinc-800 bg-zinc-900 text-zinc-400">
+                  <span className={`w-1.5 h-1.5 rounded-full ${apiMode === 'demo' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
+                  <span className="capitalize">{apiMode} Mode</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Main Content Area */}
@@ -359,16 +448,9 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               </span>
             </div>
 
-            {/* Interactive TrueFocus Keyword Showcase */}
-            <div className="flex justify-center py-1">
-              <TrueFocus
-                sentence="Modular Pythonic Stateful Self-Hosted Zero-Lockin"
-                blurAmount={3}
-                borderColor="#818cf8"
-                glowColor="rgba(99, 102, 241, 0.4)"
-                animationDuration={0.4}
-                pauseBetweenAnimations={1.6}
-              />
+            {/* Crisp Feature Pills Interactive Component */}
+            <div className="py-2">
+              <FeaturePills />
             </div>
 
             {/* Sub-headline */}
