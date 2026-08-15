@@ -5,7 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Badge } from '../common/Badge';
 import { UserAvatar } from '../common/UserAvatar';
 import { Modal } from '../common/Modal';
-import { ThemeSwitcher } from '../common/ThemeSwitcher';
 
 interface NavbarProps {
   onToggleMobileSidebar: () => void;
@@ -28,12 +27,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800 transition-colors">
+      <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 transition-colors">
         {/* Left Side: Logo & Mobile Toggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMobileSidebar}
-            className="p-2 -ml-1 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg md:hidden hover:bg-slate-100 dark:hover:bg-zinc-900"
+            className="p-2 -ml-1 text-zinc-400 hover:text-white rounded-lg md:hidden hover:bg-zinc-900"
             aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
@@ -48,14 +47,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
             </div>
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-base tracking-tight text-slate-900 dark:text-white">
-                  tc<span className="text-indigo-500 dark:text-indigo-400">-</span>auth
+                <span className="font-mono font-bold text-base tracking-tight text-white">
+                  tc<span className="text-indigo-400">-</span>auth
                 </span>
-                <span className="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 rounded-md leading-none shadow-2xs">
+                <span className="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-indigo-400 bg-indigo-950/60 border border-indigo-800/60 rounded-md leading-none shadow-2xs">
                   v1.5.0
                 </span>
               </div>
-              <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-zinc-500 hidden sm:block leading-tight">
+              <p className="text-[10px] font-semibold tracking-wider uppercase text-zinc-500 hidden sm:block leading-tight">
                 Control Panel
               </p>
             </div>

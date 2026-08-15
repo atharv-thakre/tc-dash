@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   KeyRound,
   Shield,
@@ -16,12 +16,18 @@ import {
   Sliders,
   Send,
   Mail,
-  Sun,
-  Moon,
-  Globe
+  Play,
+  LogIn,
+  UserPlus,
+  ChevronRight,
+  Database,
+  ExternalLink,
+  Cpu,
+  Layers,
+  Flame,
+  X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { useApiConfig } from '../contexts/ApiConfigContext';
 import { toast } from 'sonner';
 
@@ -30,12 +36,12 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
-  const { account } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { apiMode } = useApiConfig();
+  const { account, login } = useAuth();
+  const { apiMode, setApiMode } = useApiConfig();
 
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
-  const [activeCodeTab, setActiveCodeTab] = useState<'python' | 'fastapi' | 'rest' | 'jwt'>('python');
+  const [activeCodeTab, setActiveCodeTab] = useState<'init' | 'otp' | 'sessions' | 'rest'>('init');
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
 
   // Interactive Playground State
   const [playgroundTab, setPlaygroundTab] = useState<'otp' | 'jwt' | 'rest'>('otp');
@@ -59,6 +65,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
+  const handleLaunchDemo = () => {
+    setApiMode('demo');
+    // Pre-populate with demo superadmin credentials if needed
+    login('superadmin@tcauth.dev', 'superadmin123', true);
+    toast.success('Launched Live Demo Console as Superadmin!');
+    onNavigate('/dashboard');
+  };
+
   const handleSimulateOtp = () => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
@@ -78,55 +92,77 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   };
 
   const codeSnippets = {
-    python: `# 1. Install & Initialize tc_auth
-from tc_auth import AuthService
+    init: `# 1. Install & Initialize tc_auth
+from tc_auth import Auth
+from sqlalchemy import create_engine
+from fastapi import FastAPI
 
-# Initialize with secret key & database
-auth = AuthService(
+app = FastAPI(title="Cloud Service API")
+engine = create_engine("sqlite:///auth.db")
+
+# Initialize tc_auth with your database engine and secret
+auth = Auth(
+    app=app,
+    engine=engine,
     secret_key="your-secure-jwt-secret-key-32-chars",
-    database_url="sqlite:///auth.db",
     session_duration_days=7
 )
 
 # User registration & password login
-account = auth.service.create_account(
+account = auth.account.create(
     name="Jane Doe",
     email="jane@example.com",
     password="superSecretPassword123!"
 )
 
-# Verify credentials & issue stateful session token
+# Verify credentials & generate stateful session
 session_data = auth.service.login(
     identifier="jane@example.com",
     password="superSecretPassword123!",
-    ip_address="203.0.113.10",
-    user_agent="Mozilla/5.0"
+    ip_address="203.0.113.10"
 )
 
-print(f"Access Token: {session_data['access_token']}")`,
+print("JWT Access Token:", session_data["access_token"])`,
 
-    fastapi: `# 2. Mount with FastAPI in 3 lines
-from fastapi import FastAPI, Depends
-from tc_auth import AuthService
+    otp: `# 2. Passwordless Email OTP Flow
+from tc_auth import Auth
 
-app = FastAPI(title="My Cloud Service")
+auth = Auth(app=app, engine=engine, secret_key="your-jwt-secret")
 
-# Initialize tc_auth
-auth = AuthService(secret_key="my-jwt-secret-key")
+# Step A: Dispatch 6-digit cryptographic OTP to user's email
+otp_code = auth.otp.create_otp(
+    email="jane@example.com",
+    purpose="login",
+    expires_minutes=10
+)
 
-# Mount all 20+ Auth, Profile, OTP & Admin routes under /tc-auth
-app.include_router(auth.get_router(), prefix="/tc-auth")
+# Step B: Verify the OTP & automatically issue active session token
+verification = auth.service.verify_otp_and_login(
+    email="jane@example.com",
+    otp_code="849201",
+    ip_address="203.0.113.10"
+)
 
-# Protect custom routes using dependency injection
-@app.get("/api/v1/protected-data")
-async def get_data(user = Depends(auth.dependencies.get_current_user)):
-    return {
-        "message": f"Hello {user['account']['name']}!",
-        "role": user['account']['role'],
-        "session_id": user['session']['id']
-    }`,
+if verification["status"] == "success":
+    print("User authenticated:", verification["account"]["name"])
+    print("Session ID:", verification["session"]["id"])`,
 
-    rest: `# 3. Standard REST API Call (cURL)
+    sessions: `# 3. Stateful Database Session Management
+from tc_auth import Auth
+
+auth = Auth(app=app, engine=engine, secret_key="your-jwt-secret")
+
+# List all active connected sessions for a given account ID
+active_sessions = auth.session.get_user_sessions(account_id=1)
+print(f"Total active devices: {len(active_sessions)}")
+
+# Instantly revoke a specific compromised session token
+auth.session.revoke_session(session_id=42)
+
+# Purge all sessions across all devices (force global re-login)
+auth.session.revoke_all_sessions(account_id=1)`,
+
+    rest: `# 4. Standard REST API Call (cURL)
 curl -X POST https://api.example.com/tc-auth/login/password \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -142,31 +178,13 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 #     "id": 1,
 #     "name": "Jane Doe",
 #     "email": "jane@example.com",
-#     "role": "user"
+#     "role": "superadmin"
 #   }
-# }`,
-
-    jwt: `// 4. Decoded Stateful JWT Payload Inspection
-{
-  "header": {
-    "alg": "HS256",
-    "typ": "JWT"
-  },
-  "payload": {
-    "aid": 1,                                  // Account ID
-    "sid": 42,                                 // Stateful Database Session ID
-    "role": "superadmin",                      // RBAC Authorization Tier
-    "iss": "tc_auth_v1.5.0",                   // Issuer Tag
-    "iat": 1786800000,                         // Issued At
-    "exp": 1787404800                          // Expires At (7 Days)
-  },
-  "verified_signature": true,
-  "session_revocation_check": "VALID_ACTIVE"
-}`
+# }`
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors selection:bg-indigo-500 selection:text-white font-sans">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-indigo-500 selection:text-white font-sans antialiased">
       {/* Background Subtle Gradient & Grid */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent blur-3xl" />
@@ -174,7 +192,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
       </div>
 
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('/')}>
@@ -182,58 +200,49 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               <KeyRound className="w-5 h-5" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                tc<span className="text-indigo-600 dark:text-indigo-400">-</span>auth
+              <span className="text-lg font-black tracking-tight text-white">
+                tc<span className="text-indigo-400">-</span>auth
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 rounded-md">
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800/60 rounded-md">
                 v1.5.0
               </span>
             </div>
           </div>
 
           {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600 dark:text-zinc-400">
-            <a href="#features" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-400">
+            <a href="#features" className="hover:text-indigo-400 transition-colors">
               Features
             </a>
-            <a href="#playground" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              Interactive Demo
+            <a href="#playground" className="hover:text-indigo-400 transition-colors">
+              Interactive Playground
             </a>
-            <a href="#architecture" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <a href="#architecture" className="hover:text-indigo-400 transition-colors">
               Architecture
             </a>
             <button
               onClick={() => onNavigate('/docs/lib/setup')}
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+              className="hover:text-indigo-400 transition-colors cursor-pointer"
             >
               Python SDK Docs
             </button>
             <button
               onClick={() => onNavigate('/docs/api/login-routes')}
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+              className="hover:text-indigo-400 transition-colors cursor-pointer"
             >
               REST API Docs
             </button>
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Live API Mode Badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border border-slate-200 dark:border-zinc-800 bg-slate-100/60 dark:bg-zinc-900/60 text-slate-600 dark:text-zinc-400">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border border-zinc-800 bg-zinc-900/60 text-zinc-400">
               <span className={`w-1.5 h-1.5 rounded-full ${apiMode === 'demo' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`} />
               <span className="capitalize">{apiMode} Mode</span>
             </div>
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-            </button>
-
-            {/* Console / Sign In Button */}
+            {/* If logged in: Go to Dashboard. If not: clear Launch / Demo / Sign In options */}
             {account ? (
               <button
                 onClick={() => onNavigate('/dashboard')}
@@ -245,16 +254,26 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             ) : (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={handleLaunchDemo}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer"
+                  title="Test dashboard immediately with sample data"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Try Demo</span>
+                </button>
+
+                <button
                   onClick={() => onNavigate('/login')}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-zinc-900 transition-all cursor-pointer"
                 >
                   Sign In
                 </button>
+
                 <button
-                  onClick={() => onNavigate('/dashboard')}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                  onClick={() => onNavigate('/signup')}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
                 >
-                  <span>Launch Console</span>
+                  <span>Get Started</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -273,12 +292,12 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-2xs"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-950/60 border border-indigo-800/80 text-indigo-300 shadow-2xs"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              <span>v1.5.0 Released • Production Modular Auth Suite</span>
-              <span className="text-slate-300 dark:text-zinc-700">|</span>
-              <span className="font-mono text-[11px] opacity-80">pip install tc-auth</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>v1.5.0 Released • Modular Python Auth Suite</span>
+              <span className="text-zinc-700">|</span>
+              <span className="font-mono text-[11px] opacity-90 text-indigo-200">pip install tc_auth</span>
             </motion.div>
 
             {/* Headline */}
@@ -286,10 +305,10 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1]"
+              className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]"
             >
               Authentication Made <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Modular, Secure & Pythonic
               </span>
             </motion.h1>
@@ -299,47 +318,66 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-base sm:text-lg text-slate-600 dark:text-zinc-400 font-normal max-w-2xl mx-auto leading-relaxed"
+              className="text-base sm:text-lg text-zinc-400 font-normal max-w-2xl mx-auto leading-relaxed"
             >
-              A self-hosted, full-stack authentication framework for Python & FastAPI applications.
-              Featuring database-backed JWT sessions, passwordless email OTP, Google & GitHub OAuth 2.0,
-              and a live admin control panel.
+              A self-hosted, modular authentication framework for Python backends.
+              Featuring database-backed stateful JWT sessions, passwordless email OTP,
+              Google & GitHub OAuth 2.0, and a live administration console.
             </motion.p>
 
-            {/* CTA Buttons & Quick Install Bar */}
+            {/* Options To Launch in Demo, Sign In, or Create Account */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-wrap items-center justify-center gap-3 pt-2"
+              className="pt-2 space-y-4"
             >
-              <button
-                onClick={() => onNavigate('/dashboard')}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
-              >
-                <span>Launch Live Control Panel</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {/* 1. Try Live Demo Option */}
+                <button
+                  onClick={handleLaunchDemo}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 shadow-lg shadow-amber-950/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Try Live Demo</span>
+                </button>
 
-              <button
-                onClick={() => onNavigate('/docs/lib/setup')}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-all cursor-pointer"
-              >
-                <Code2 className="w-4 h-4 text-indigo-500" />
-                <span>Explore Docs</span>
-              </button>
+                {/* 2. Sign In Option */}
+                <button
+                  onClick={() => onNavigate('/login')}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In to Console</span>
+                </button>
+
+                {/* 3. Register / Get Started Option */}
+                <button
+                  onClick={() => onNavigate('/signup')}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-zinc-900 border border-zinc-800 text-zinc-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4 text-purple-400" />
+                  <span>Create Account</span>
+                </button>
+              </div>
 
               {/* Pip Install Copy Box */}
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-zinc-900 border border-slate-800 text-slate-300 font-mono text-xs shadow-inner">
-                <Terminal className="w-3.5 h-3.5 text-indigo-400" />
-                <span>pip install tc-auth</span>
-                <button
-                  onClick={() => copyToClipboard('pip install tc-auth', 'pip command')}
-                  className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title="Copy command"
-                >
-                  {copiedSnippet === 'pip command' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
+              <div className="flex items-center justify-center pt-2">
+                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono text-xs shadow-inner">
+                  <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="text-zinc-200">pip install tc_auth</span>
+                  <button
+                    onClick={() => copyToClipboard('pip install tc_auth', 'pip install tc_auth')}
+                    className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    title="Copy command"
+                  >
+                    {copiedSnippet === 'pip install tc_auth' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -349,72 +387,72 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-14 max-w-4xl mx-auto rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-2xl overflow-hidden backdrop-blur-sm"
+            className="mt-14 max-w-4xl mx-auto rounded-2xl border border-zinc-800 bg-zinc-900/90 shadow-2xl overflow-hidden backdrop-blur-sm"
           >
             {/* Code Tabs Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-zinc-800 bg-slate-100/60 dark:bg-zinc-950/60">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950/80">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-rose-500/80" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="ml-2 text-xs font-mono font-bold text-slate-500 dark:text-zinc-400">
-                  tc_auth_quickstart
+                <span className="ml-2 text-xs font-mono font-bold text-zinc-400">
+                  tc_auth_python_suite
                 </span>
               </div>
 
               {/* Tabs */}
-              <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-zinc-900 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg">
                 <button
-                  onClick={() => setActiveCodeTab('python')}
+                  onClick={() => setActiveCodeTab('init')}
                   className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    activeCodeTab === 'python'
-                      ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    activeCodeTab === 'init'
+                      ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
+                      : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  Python SDK
+                  Quickstart
                 </button>
                 <button
-                  onClick={() => setActiveCodeTab('fastapi')}
+                  onClick={() => setActiveCodeTab('otp')}
                   className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    activeCodeTab === 'fastapi'
-                      ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    activeCodeTab === 'otp'
+                      ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
+                      : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  FastAPI Mount
+                  Email OTP
+                </button>
+                <button
+                  onClick={() => setActiveCodeTab('sessions')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                    activeCodeTab === 'sessions'
+                      ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Session Control
                 </button>
                 <button
                   onClick={() => setActiveCodeTab('rest')}
                   className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
                     activeCodeTab === 'rest'
-                      ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
+                      : 'text-zinc-400 hover:text-white'
                   }`}
                 >
                   REST API
-                </button>
-                <button
-                  onClick={() => setActiveCodeTab('jwt')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    activeCodeTab === 'jwt'
-                      ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
-                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  JWT Inspection
                 </button>
               </div>
 
               {/* Copy Code */}
               <button
                 onClick={() => copyToClipboard(codeSnippets[activeCodeTab], `${activeCodeTab} snippet`)}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 {copiedSnippet === `${activeCodeTab} snippet` ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-emerald-500 text-[11px]">Copied</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 text-[11px]">Copied</span>
                   </>
                 ) : (
                   <>
@@ -426,7 +464,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             </div>
 
             {/* Code Body */}
-            <div className="p-5 bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto leading-relaxed max-h-[380px]">
+            <div className="p-5 bg-zinc-950 text-zinc-200 font-mono text-xs overflow-x-auto leading-relaxed max-h-[380px]">
               <pre>
                 <code>{codeSnippets[activeCodeTab]}</code>
               </pre>
@@ -435,124 +473,124 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
         </section>
 
         {/* CORE PILLARS / FEATURES BENTO */}
-        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200/80 dark:border-zinc-800/80">
+        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-zinc-800/80">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-950/60 border border-indigo-800/60">
               Core Capabilities
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               Engineered for Modern Security & DX
             </h2>
-            <p className="text-sm text-slate-600 dark:text-zinc-400">
+            <p className="text-sm text-zinc-400">
               Everything you need to ship secure authentication, user management, and session control without third-party vendor lock-in.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-900 flex items-center justify-center text-indigo-400 mb-4 group-hover:scale-105 transition-transform">
                 <Shield className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Multi-Strategy Authentication
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 Support bcrypt-hashed passwords, passwordless 6-digit email OTPs, Google OpenID Connect, and GitHub OAuth 2.0 in a unified user model.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-purple-950/60 border border-purple-900 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-105 transition-transform">
                 <Lock className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Stateful JWT Sessions
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-                Tokens contain active session IDs (<code className="font-mono text-indigo-500">sid</code>) backed by the database. Revoke compromised devices instantly without waiting for JWT expiry.
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Tokens contain active session IDs (<code className="font-mono text-indigo-400">sid</code>) backed by the database. Revoke compromised devices instantly without waiting for JWT expiry.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-900 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-105 transition-transform">
                 <Zap className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                Turnkey FastAPI & Pure Python
+              <h3 className="text-lg font-bold text-white mb-2">
+                Pure Python SDK Architecture
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-                Use as a standalone Python SDK or mount the complete REST API suite into any FastAPI instance with <code className="font-mono text-indigo-500">app.include_router()</code>.
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Clean, modular class structure (<code className="font-mono text-indigo-400">auth.account</code>, <code className="font-mono text-indigo-400">auth.otp</code>, <code className="font-mono text-indigo-400">auth.session</code>) designed for seamless backend integration.
               </p>
             </div>
 
             {/* Feature 4 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-900 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-105 transition-transform">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Granular Role Hierarchy (RBAC)
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-                Out-of-the-box <code className="font-mono text-amber-500">user</code>, <code className="font-mono text-indigo-500">admin</code>, and <code className="font-mono text-purple-500">superadmin</code> authorization guards with simple dependency injection.
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Built-in <code className="font-mono text-amber-400">user</code>, <code className="font-mono text-indigo-400">admin</code>, and <code className="font-mono text-purple-400">superadmin</code> authorization tiers with role checks and privilege guards.
               </p>
             </div>
 
             {/* Feature 5 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-100 dark:border-sky-900 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-sky-950/60 border border-sky-900 flex items-center justify-center text-sky-400 mb-4 group-hover:scale-105 transition-transform">
                 <Mail className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Built-in Email OTP Engine
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 Direct SMTP integration for sending verification codes, signup authorizations, and password resets with brute-force attempt limits.
               </p>
             </div>
 
             {/* Feature 6 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-pink-50 dark:bg-pink-950/60 border border-pink-100 dark:border-pink-900 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-4 group-hover:scale-105 transition-transform">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm hover:border-indigo-500/40 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-pink-950/60 border border-pink-900 flex items-center justify-center text-pink-400 mb-4 group-hover:scale-105 transition-transform">
                 <Sliders className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Real-Time Admin Control Panel
               </h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-                Full web dashboard for auditing active sessions, inspecting accounts, managing OAuth links, and updating SMTP & OAuth credentials at runtime.
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Full web dashboard for auditing active sessions, inspecting accounts, managing OAuth links, and updating SMTP credentials at runtime.
               </p>
             </div>
           </div>
         </section>
 
         {/* INTERACTIVE PLAYGROUND TESTER */}
-        <section id="playground" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200/80 dark:border-zinc-800/80">
+        <section id="playground" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-zinc-800/80">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/60">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-800/60">
               Interactive Test Suite
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               Test tc_auth in Real Time
             </h2>
-            <p className="text-sm text-slate-600 dark:text-zinc-400">
+            <p className="text-sm text-zinc-400">
               Try the core authentication mechanics right here in your browser before integrating into your backend.
             </p>
           </div>
 
           {/* Playground Card */}
-          <div className="max-w-4xl mx-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl overflow-hidden">
             {/* Top Playground Bar */}
-            <div className="flex border-b border-slate-200 dark:border-zinc-800 bg-slate-100/60 dark:bg-zinc-950/60">
+            <div className="flex border-b border-zinc-800 bg-zinc-950/60">
               <button
                 onClick={() => setPlaygroundTab('otp')}
                 className={`flex-1 py-3 px-4 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
                   playgroundTab === 'otp'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-zinc-900'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'border-indigo-600 text-indigo-400 bg-zinc-900'
+                    : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <Mail className="w-4 h-4" />
@@ -563,8 +601,8 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 onClick={() => setPlaygroundTab('jwt')}
                 className={`flex-1 py-3 px-4 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
                   playgroundTab === 'jwt'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-zinc-900'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'border-indigo-600 text-indigo-400 bg-zinc-900'
+                    : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -575,8 +613,8 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 onClick={() => setPlaygroundTab('rest')}
                 className={`flex-1 py-3 px-4 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
                   playgroundTab === 'rest'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-zinc-900'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'border-indigo-600 text-indigo-400 bg-zinc-900'
+                    : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <Terminal className="w-4 h-4" />
@@ -590,24 +628,24 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left: Input parameters */}
                   <div className="space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                       Step A: Dispatch OTP Code
                     </h4>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
                         Recipient Email Address
                       </label>
                       <input
                         type="email"
                         value={otpEmail}
                         onChange={(e) => setOtpEmail(e.target.value)}
-                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white font-mono"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-zinc-700 bg-zinc-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-white font-mono"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
                         Purpose Flow
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -619,7 +657,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                             className={`py-1.5 text-xs font-mono font-bold rounded-lg border capitalize transition-all cursor-pointer ${
                               otpPurpose === p
                                 ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400'
+                                : 'bg-zinc-800 border-zinc-700 text-zinc-400'
                             }`}
                           >
                             {p}
@@ -638,43 +676,43 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                   </div>
 
                   {/* Right: Code Received Box & Verification */}
-                  <div className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950/60 space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center justify-between">
+                  <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-950/60 space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
                       <span>Simulated SMTP Inbox</span>
                       {generatedOtp && (
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
+                        <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-2 py-0.5 rounded">
                           Delivered
                         </span>
                       )}
                     </h4>
 
                     {generatedOtp ? (
-                      <div className="p-3.5 rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-950/30 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400 font-mono text-[11px]">
+                      <div className="p-3.5 rounded-lg border border-indigo-900 bg-indigo-950/30 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between text-zinc-400 font-mono text-[11px]">
                           <span>From: noreply@auth.service</span>
                           <span>TTL: 300s</span>
                         </div>
-                        <p className="font-medium text-slate-800 dark:text-zinc-200">
-                          Your <span className="font-bold uppercase text-indigo-600 dark:text-indigo-400">{otpPurpose}</span> code is:
+                        <p className="font-medium text-zinc-200">
+                          Your <span className="font-bold uppercase text-indigo-400">{otpPurpose}</span> code is:
                         </p>
-                        <div className="text-2xl font-mono font-black text-indigo-600 dark:text-indigo-400 tracking-widest py-1">
+                        <div className="text-2xl font-mono font-black text-indigo-400 tracking-widest py-1">
                           {generatedOtp}
                         </div>
                         <button
                           onClick={() => setInputOtp(generatedOtp)}
-                          className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold cursor-pointer"
+                          className="text-[11px] text-indigo-400 hover:underline font-semibold cursor-pointer"
                         >
                           Auto-fill into verification input
                         </button>
                       </div>
                     ) : (
-                      <div className="py-8 text-center text-xs text-slate-400 dark:text-zinc-600">
+                      <div className="py-8 text-center text-xs text-zinc-600">
                         Click "Send Simulated OTP" on the left to trigger a simulated email event.
                       </div>
                     )}
 
                     <div className="pt-2 space-y-2">
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                      <label className="block text-xs font-semibold text-zinc-300">
                         Step B: Verify Received 6-Digit OTP
                       </label>
                       <div className="flex gap-2">
@@ -684,7 +722,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                           placeholder="Enter 6 digits"
                           value={inputOtp}
                           onChange={(e) => setInputOtp(e.target.value.trim())}
-                          className="flex-1 px-3 py-2 text-xs font-mono font-bold tracking-widest text-center rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          className="flex-1 px-3 py-2 text-xs font-mono font-bold tracking-widest text-center rounded-xl border border-zinc-700 bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                         />
                         <button
                           onClick={handleVerifyOtp}
@@ -696,13 +734,13 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                       </div>
 
                       {otpVerificationResult === 'success' && (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/60 p-2 rounded-lg border border-emerald-800">
                           <CheckCircle2 className="w-4 h-4" />
                           <span>OTP Validated! Bearer Access Token generated successfully.</span>
                         </div>
                       )}
                       {otpVerificationResult === 'failure' && (
-                        <div className="text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 p-2 rounded-lg border border-rose-200 dark:border-rose-800">
+                        <div className="text-xs text-rose-400 font-bold bg-rose-950/60 p-2 rounded-lg border border-rose-800">
                           Verification failed. Incorrect code or expired.
                         </div>
                       )}
@@ -715,9 +753,9 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             {/* Playground Tab 2: JWT Claims Inspector */}
             {playgroundTab === 'jwt' && (
               <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-800">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-zinc-400">Account Role:</span>
+                    <span className="text-xs font-semibold text-zinc-400">Account Role:</span>
                     {(['user', 'admin', 'superadmin'] as const).map((r) => (
                       <button
                         key={r}
@@ -725,7 +763,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                         className={`px-3 py-1 rounded-lg text-xs font-mono font-bold capitalize transition-all cursor-pointer ${
                           jwtRole === r
                             ? 'bg-indigo-600 text-white'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700'
+                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                         }`}
                       >
                         {r}
@@ -734,7 +772,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-zinc-400">Session Status:</span>
+                    <span className="text-xs font-semibold text-zinc-400">Session Status:</span>
                     {(['active', 'expired'] as const).map((s) => (
                       <button
                         key={s}
@@ -744,7 +782,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                             ? s === 'active'
                               ? 'bg-emerald-600 text-white'
                               : 'bg-rose-600 text-white'
-                            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700'
+                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                         }`}
                       >
                         {s}
@@ -756,10 +794,10 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Encoded JWT String */}
                   <div className="space-y-2">
-                    <h5 className="text-xs font-mono font-bold text-slate-500 dark:text-zinc-400 uppercase">
+                    <h5 className="text-xs font-mono font-bold text-zinc-400 uppercase">
                       1. Encoded JWT String
                     </h5>
-                    <div className="p-3.5 rounded-xl bg-slate-950 text-indigo-400 font-mono text-[11px] break-all leading-relaxed h-[220px] overflow-y-auto">
+                    <div className="p-3.5 rounded-xl bg-zinc-950 text-indigo-400 font-mono text-[11px] break-all leading-relaxed h-[220px] overflow-y-auto">
                       <span className="text-rose-400">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.
                       <span className="text-purple-400">
                         {btoa(
@@ -778,10 +816,10 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
                   {/* Decoded Claims Payload */}
                   <div className="space-y-2">
-                    <h5 className="text-xs font-mono font-bold text-slate-500 dark:text-zinc-400 uppercase">
+                    <h5 className="text-xs font-mono font-bold text-zinc-400 uppercase">
                       2. Decoded Header & Payload Claims
                     </h5>
-                    <div className="p-3.5 rounded-xl bg-slate-950 text-slate-200 font-mono text-[11px] leading-relaxed h-[220px] overflow-y-auto">
+                    <div className="p-3.5 rounded-xl bg-zinc-950 text-zinc-200 font-mono text-[11px] leading-relaxed h-[220px] overflow-y-auto">
                       <pre>
                         {JSON.stringify(
                           {
@@ -809,8 +847,8 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             {/* Playground Tab 3: REST Probe */}
             {playgroundTab === 'rest' && (
               <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-slate-200 dark:border-zinc-800">
-                  <span className="text-xs font-semibold text-slate-600 dark:text-zinc-400">Target Endpoint:</span>
+                <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-zinc-800">
+                  <span className="text-xs font-semibold text-zinc-400">Target Endpoint:</span>
                   {[
                     { id: 'login', label: 'POST /tc-auth/login/password' },
                     { id: 'pulse', label: 'GET /tc-auth/config/pulse' },
@@ -823,7 +861,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                       className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                         selectedEndpoint === ep.id
                           ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700'
+                          : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                       }`}
                     >
                       {ep.label}
@@ -831,8 +869,8 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                   ))}
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-950 font-mono text-xs text-slate-200 space-y-3">
-                  <div className="flex items-center justify-between text-slate-400 text-[11px] pb-2 border-b border-zinc-800">
+                <div className="p-4 rounded-xl bg-zinc-950 font-mono text-xs text-zinc-200 space-y-3">
+                  <div className="flex items-center justify-between text-zinc-400 text-[11px] pb-2 border-b border-zinc-800">
                     <span>HTTP/1.1 200 OK</span>
                     <span className="text-emerald-400 font-bold">latency: 12ms</span>
                   </div>
@@ -896,72 +934,72 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
         </section>
 
         {/* ARCHITECTURE & COMPARISON SECTION */}
-        <section id="architecture" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200/80 dark:border-zinc-800/80">
+        <section id="architecture" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-zinc-800/80">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/60 dark:border-purple-800/60">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-950/60 border border-purple-800/60">
               Architecture & Strategy
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               Why Choose tc_auth?
             </h2>
-            <p className="text-sm text-slate-600 dark:text-zinc-400">
-              Compare custom-scaffolded auth versus expensive cloud SaaS against the simplicity of self-hosted <code className="font-mono text-indigo-500">tc_auth</code>.
+            <p className="text-sm text-zinc-400">
+              Compare custom-scaffolded auth versus expensive cloud SaaS against the simplicity of self-hosted <code className="font-mono text-indigo-400">tc_auth</code>.
             </p>
           </div>
 
           {/* Comparison Matrix Table */}
-          <div className="max-w-4xl mx-auto rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden mb-16">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm overflow-hidden mb-16">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-100/60 dark:bg-zinc-950/60 text-slate-500 dark:text-zinc-400 font-mono uppercase text-[10px]">
+                  <tr className="border-b border-zinc-800 bg-zinc-950/60 text-zinc-400 font-mono uppercase text-[10px]">
                     <th className="py-3.5 px-4 font-bold">Feature</th>
-                    <th className="py-3.5 px-4 font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30">
+                    <th className="py-3.5 px-4 font-bold text-indigo-400 bg-indigo-950/30">
                       tc_auth v1.5.0
                     </th>
                     <th className="py-3.5 px-4 font-bold">Custom Auth Code</th>
                     <th className="py-3.5 px-4 font-bold">Heavy Auth SaaS (Auth0/Okta)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 text-slate-700 dark:text-zinc-300">
+                <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
                   <tr>
-                    <td className="py-3 px-4 font-semibold">Self-Hosted & Zero Vendor Lock-in</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-indigo-50/30 dark:bg-indigo-950/20 flex items-center gap-1.5">
+                    <td className="py-3 px-4 font-semibold">Self-Hosted & Zero Lock-in</td>
+                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" /> 100% On-Prem / Cloud
                     </td>
-                    <td className="py-3 px-4 text-slate-500">Yes (requires maintenance)</td>
+                    <td className="py-3 px-4 text-zinc-500">Yes (requires maintenance)</td>
                     <td className="py-3 px-4 text-rose-500 font-medium">No (Strictly Locked-In)</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Stateful Active Session Revocation</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-indigo-50/30 dark:bg-indigo-950/20">
+                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
                       Instant single & all-device purge
                     </td>
-                    <td className="py-3 px-4 text-slate-500">Complex to build properly</td>
-                    <td className="py-3 px-4 text-slate-500">Supported</td>
+                    <td className="py-3 px-4 text-zinc-500">Complex to build properly</td>
+                    <td className="py-3 px-4 text-zinc-500">Supported</td>
                   </tr>
                   <tr>
-                    <td className="py-3 px-4 font-semibold">Turnkey FastAPI Mount</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-indigo-50/30 dark:bg-indigo-950/20">
-                      3 lines of code (<code className="font-mono text-[10px]">include_router</code>)
+                    <td className="py-3 px-4 font-semibold">Drop-in Python SDK API</td>
+                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
+                      Unified <code className="font-mono text-[10px]">Auth</code> class
                     </td>
-                    <td className="py-3 px-4 text-slate-500">Hundreds of lines</td>
-                    <td className="py-3 px-4 text-slate-500">Requires SDK boilerplate</td>
+                    <td className="py-3 px-4 text-zinc-500">Hundreds of manual lines</td>
+                    <td className="py-3 px-4 text-zinc-500">Requires SDK boilerplate</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Live Admin Control Panel UI</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-indigo-50/30 dark:bg-indigo-950/20">
+                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
                       Included with live audit metrics
                     </td>
                     <td className="py-3 px-4 text-rose-500 font-medium">Must build from scratch</td>
-                    <td className="py-3 px-4 text-slate-500">Included</td>
+                    <td className="py-3 px-4 text-zinc-500">Included</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Cost / MAU Limits</td>
-                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 bg-indigo-50/30 dark:bg-indigo-950/20">
+                    <td className="py-3 px-4 font-bold text-emerald-400 bg-indigo-950/20">
                       Free & Open-Source (Unlimited)
                     </td>
-                    <td className="py-3 px-4 text-slate-500">Free (High Dev Cost)</td>
+                    <td className="py-3 px-4 text-zinc-500">Free (High Dev Cost)</td>
                     <td className="py-3 px-4 text-rose-500 font-medium">$$$ Per Active User</td>
                   </tr>
                 </tbody>
@@ -971,80 +1009,96 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
         </section>
 
         {/* 3-STEP QUICKSTART */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200/80 dark:border-zinc-800/80">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-zinc-800/80">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-950/60 border border-indigo-800/60">
               Get Started in Minutes
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               Three Steps to Full Production Auth
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Step 1 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-3">
-              <div className="text-3xl font-black font-mono text-indigo-600 dark:text-indigo-400">01</div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Install Package</h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400">
-                Install tc_auth into your Python virtual environment using pip or poetry.
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+              <div className="text-3xl font-black font-mono text-indigo-400">01</div>
+              <h3 className="text-base font-bold text-white">Install Package</h3>
+              <p className="text-xs text-zinc-400">
+                Install tc_auth into your Python virtual environment using pip.
               </p>
-              <div className="p-2.5 rounded-lg bg-slate-950 text-slate-300 font-mono text-[11px]">
-                pip install tc-auth
+              <div className="p-2.5 rounded-lg bg-zinc-950 text-zinc-300 font-mono text-[11px]">
+                pip install tc_auth
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-3">
-              <div className="text-3xl font-black font-mono text-indigo-600 dark:text-indigo-400">02</div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Mount Router</h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400">
-                Initialize AuthService with your JWT secret and mount into your FastAPI instance.
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+              <div className="text-3xl font-black font-mono text-indigo-400">02</div>
+              <h3 className="text-base font-bold text-white">Initialize & Configure</h3>
+              <p className="text-xs text-zinc-400">
+                Instantiate Auth with your database engine, secret key, and session policy.
               </p>
-              <div className="p-2.5 rounded-lg bg-slate-950 text-slate-300 font-mono text-[11px]">
-                app.include_router(auth.get_router())
+              <div className="p-2.5 rounded-lg bg-zinc-950 text-zinc-300 font-mono text-[11px]">
+                auth = Auth(app, engine, secret_key=SECRET)
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-3">
-              <div className="text-3xl font-black font-mono text-indigo-600 dark:text-indigo-400">03</div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Manage & Monitor</h3>
-              <p className="text-xs text-slate-600 dark:text-zinc-400">
+            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+              <div className="text-3xl font-black font-mono text-indigo-400">03</div>
+              <h3 className="text-base font-bold text-white">Manage & Monitor</h3>
+              <p className="text-xs text-zinc-400">
                 Open the interactive control panel to configure SMTP, Google/GitHub OAuth, and audit sessions.
               </p>
-              <button
-                onClick={() => onNavigate('/dashboard')}
-                className="w-full py-2 px-3 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
-              >
-                Open Control Panel →
-              </button>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleLaunchDemo}
+                  className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition-all cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Try Demo</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('/login')}
+                  className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer"
+                >
+                  Sign In →
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
         {/* BOTTOM CTA BANNER */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-950 to-zinc-950 p-8 sm:p-12 text-white border border-indigo-800/60 shadow-2xl relative overflow-hidden text-center space-y-6">
+          <div className="rounded-3xl bg-gradient-to-br from-indigo-950 via-zinc-900 to-zinc-950 p-8 sm:p-12 text-white border border-indigo-800/60 shadow-2xl relative overflow-hidden text-center space-y-6">
             <div className="max-w-2xl mx-auto space-y-4 relative z-10">
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
-                Ready to Secure Your Next Python Application?
+                Ready to Secure Your Python Application?
               </h2>
               <p className="text-sm text-indigo-200/80 leading-relaxed">
-                Take complete ownership of your authentication layer. Explore the documentation or start exploring the control panel now.
+                Take complete ownership of your authentication layer. Try the live demo, sign into your control panel, or explore the documentation.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <button
-                  onClick={() => onNavigate('/dashboard')}
-                  className="px-6 py-3 rounded-xl text-xs font-bold bg-white text-indigo-950 hover:bg-indigo-50 shadow-lg transition-all cursor-pointer"
+                  onClick={handleLaunchDemo}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-bold bg-amber-400 text-zinc-950 hover:bg-amber-300 shadow-lg transition-all cursor-pointer"
                 >
-                  Launch Control Panel
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Launch Live Demo</span>
                 </button>
                 <button
-                  onClick={() => onNavigate('/docs/lib/setup')}
+                  onClick={() => onNavigate('/login')}
+                  className="px-6 py-3 rounded-xl text-xs font-bold bg-white text-indigo-950 hover:bg-indigo-50 shadow-lg transition-all cursor-pointer"
+                >
+                  Sign In to Console
+                </button>
+                <button
+                  onClick={() => onNavigate('/signup')}
                   className="px-5 py-3 rounded-xl text-xs font-bold bg-indigo-800/60 hover:bg-indigo-800 border border-indigo-700 text-white transition-all cursor-pointer"
                 >
-                  View Documentation
+                  Create Account
                 </button>
               </div>
             </div>
@@ -1053,30 +1107,34 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 py-12 text-xs text-slate-500 dark:text-zinc-500">
+      <footer className="border-t border-zinc-800 bg-zinc-950 py-12 text-xs text-zinc-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
               <KeyRound className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-slate-900 dark:text-white">
-              tc-auth <span className="font-mono text-indigo-500">v1.5.0</span>
+            <span className="font-bold text-white">
+              tc-auth <span className="font-mono text-indigo-400">v1.5.0</span>
             </span>
             <span>•</span>
             <span>Modular Authentication Framework for Python</span>
           </div>
 
           <div className="flex items-center gap-6 font-semibold">
-            <button onClick={() => onNavigate('/docs/lib/setup')} className="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer">
+            <button onClick={() => onNavigate('/docs/lib/setup')} className="hover:text-indigo-400 cursor-pointer">
               Library Docs
             </button>
-            <button onClick={() => onNavigate('/docs/api/login-routes')} className="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer">
+            <button onClick={() => onNavigate('/docs/api/login-routes')} className="hover:text-indigo-400 cursor-pointer">
               REST API
             </button>
-            <button onClick={() => onNavigate('/login')} className="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer">
+            <button onClick={handleLaunchDemo} className="hover:text-amber-400 cursor-pointer flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-400" />
+              <span>Live Demo</span>
+            </button>
+            <button onClick={() => onNavigate('/login')} className="hover:text-indigo-400 cursor-pointer">
               Admin Login
             </button>
-            <button onClick={() => onNavigate('/signup')} className="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer">
+            <button onClick={() => onNavigate('/signup')} className="hover:text-indigo-400 cursor-pointer">
               Register
             </button>
           </div>
