@@ -188,6 +188,15 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
   return (
     <div className="min-h-[90vh] flex flex-col items-center justify-center p-4 py-8">
+      {/* Back to Landing Page Link */}
+      <button
+        onClick={() => onNavigate('/')}
+        className="mb-4 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl hover:bg-zinc-900 border border-transparent hover:border-zinc-800"
+      >
+        <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+        <span>Back to Product Overview</span>
+      </button>
+
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all">
         {/* Brand Header */}
         <div className="text-center mb-6">

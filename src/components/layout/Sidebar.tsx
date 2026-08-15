@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileCode2,
+  Globe,
   KeyRound,
   LayoutDashboard,
   Link,
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isApiOpen, setIsApiOpen] = useState(false);
 
   const navItems = [
+    { label: 'Landing Page', path: '/', icon: Globe, requiresSuperAdmin: false },
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, requiresSuperAdmin: false },
     { label: 'Accounts', path: '/accounts', icon: Users, requiresSuperAdmin: true },
     { label: 'OAuth Links', path: '/oauth-links', icon: Link, requiresSuperAdmin: true },

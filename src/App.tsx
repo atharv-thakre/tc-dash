@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -42,13 +43,13 @@ function AppRouter() {
       if (pathname.includes('google')) return '/google/callback';
       return '/oauth/callback';
     }
-    return pathname && pathname !== '/' ? pathname : '/dashboard';
+    return pathname || '/';
   });
 
   useEffect(() => {
     const handlePopState = () => {
       const pathname = window.location.pathname;
-      setCurrentPath(pathname && pathname !== '/' ? pathname : '/login');
+      setCurrentPath(pathname || '/');
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -59,9 +60,15 @@ function AppRouter() {
   const handleNavigate = (path: string) => {
     setCurrentPath(path);
     window.history.pushState({}, '', path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Render standalone Auth pages if navigating to login/signup or when not authenticated
+  // Render Landing Page if visiting '/' or '/landing'
+  if (currentPath === '/' || currentPath === '/landing') {
+    return <LandingPage onNavigate={handleNavigate} />;
+  }
+
+  // Render standalone Auth pages if navigating to login/signup
   if (currentPath === '/login') {
     return <LoginPage onNavigate={handleNavigate} />;
   }
@@ -80,11 +87,6 @@ function AppRouter() {
     return <OAuthCallbackPage provider={provider} onNavigate={handleNavigate} />;
   }
 
-  // If not logged in and requesting protected pages, show Login Page directly
-  if (!account) {
-    return <LoginPage onNavigate={handleNavigate} />;
-  }
-
   // Helper to parse docs section & docId from currentPath
   const isDocs = currentPath.startsWith('/docs');
   let docsSection = 'lib';
@@ -94,6 +96,24 @@ function AppRouter() {
     const parts = currentPath.split('/').filter(Boolean);
     if (parts.length >= 2) docsSection = parts[1];
     if (parts.length >= 3) docsDocId = parts[2];
+  }
+
+  // If docs are accessed without login, allow full public browsing inside the AppLayout or direct view
+  if (isDocs && !account) {
+    return (
+      <AppLayout activePath={currentPath} onNavigate={handleNavigate}>
+        <DocsPage
+          section={docsSection}
+          docId={docsDocId}
+          onNavigate={handleNavigate}
+        />
+      </AppLayout>
+    );
+  }
+
+  // If not logged in and requesting protected management pages, redirect to Login
+  if (!account) {
+    return <LoginPage onNavigate={handleNavigate} />;
   }
 
   return (
