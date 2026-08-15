@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { KeyRound, Sliders, BookOpen, Sparkles, LogIn, Server } from 'lucide-react';
+import { KeyRound, FileCode2, BookOpen, Sparkles, LogIn, Server } from 'lucide-react';
 import { ApiConfigModal } from '../common/ApiConfigModal';
 
 interface DockItemProps {
@@ -89,22 +89,19 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
     },
     {
       title: 'Explore Overview',
-      icon: <KeyRound className="w-4 h-4" />,
+      icon: <KeyRound className="w-4 h-4 text-rose-400" />,
       onClick: () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
     {
-      title: 'Interactive Playground',
-      icon: <Sliders className="w-4 h-4" />,
-      onClick: () => {
-        const el = document.getElementById('playground');
-        el?.scrollIntoView({ behavior: 'smooth' });
-      },
+      title: 'REST API Docs',
+      icon: <FileCode2 className="w-4 h-4 text-sky-400" />,
+      onClick: () => onNavigate('/docs/api/login-routes'),
     },
     {
       title: 'Python SDK Docs',
-      icon: <BookOpen className="w-4 h-4" />,
+      icon: <BookOpen className="w-4 h-4 text-purple-400" />,
       onClick: () => onNavigate('/docs/lib/setup'),
     },
     {

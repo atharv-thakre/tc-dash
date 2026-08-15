@@ -20,6 +20,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { DocItem, MethodSpec, LIBRARY_DOCS, API_DOCS } from '../data/docsData';
 import { Badge } from '../components/common/Badge';
 import { toast } from 'sonner';
@@ -84,7 +85,12 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 max-w-7xl mx-auto pb-12"
+    >
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
         <div className="space-y-1">
@@ -516,6 +522,6 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

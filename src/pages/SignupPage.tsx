@@ -3,12 +3,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AlertCircle, ArrowRight, Lock, Mail, Send, User, UserPlus } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useApiConfig } from '../contexts/ApiConfigContext';
 import { authService } from '../services/auth';
 import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
+import { BorderBeam } from '../components/reactbits/BorderBeam';
 import { getErrorMessage } from '../services/apiClient';
 
 const signupSchema = z.object({
@@ -135,7 +137,12 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
   }
 
   return (
-    <div className="min-h-[85vh] flex flex-col items-center justify-center p-4 py-8">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-[85vh] flex flex-col items-center justify-center p-4 py-8"
+    >
       {/* Back to Landing Page Link */}
       <button
         onClick={() => onNavigate('/')}
@@ -145,7 +152,8 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
         <span>Back to Product Overview</span>
       </button>
 
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all">
+      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all relative overflow-hidden">
+        <BorderBeam size={220} duration={12} colorFrom="#6366f1" colorTo="#a855f7" />
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 mb-3 shadow-inner">
@@ -357,6 +365,6 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

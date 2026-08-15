@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, Fingerprint, Github, Link2, Link2Off, RefreshCw, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { OAuthLink } from '../types';
 import { oauthLinksService } from '../services/oauthLinks';
 import { DataTable } from '../components/common/DataTable';
 import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+import { AnimatedCounter } from '../components/reactbits/AnimatedCounter';
+import { DecryptedText } from '../components/reactbits/DecryptedText';
 
 const GoogleIcon = () => (
   <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
@@ -118,7 +121,7 @@ export const OAuthLinksPage: React.FC = () => {
       setProviderUserId('');
       fetchLinks();
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Failed to link provider'));
+      toast.error(getErrorMessage(err, 'Failed to link OAuth provider'));
     } finally {
       setIsSubmitting(false);
     }
@@ -143,6 +146,8 @@ export const OAuthLinksPage: React.FC = () => {
   };
 
   const safeLinks = Array.isArray(links) ? links : [];
+  const googleLinksCount = safeLinks.filter((l) => String(l.provider).toLowerCase() === 'google').length;
+  const githubLinksCount = safeLinks.filter((l) => String(l.provider).toLowerCase() === 'github').length;
 
   const columns = [
     {
@@ -154,24 +159,24 @@ export const OAuthLinksPage: React.FC = () => {
         const accountId = item.account_id;
         return (
           <div className="flex items-center gap-3 py-1">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-2xs">
-              <Link2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-2xs">
+              <Link2 className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                   Link ID
                 </span>
-                <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-200/80 dark:border-gray-700/60">
-                  #{linkId}
+                <span className="font-mono text-xs font-bold text-zinc-100 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+                  #<DecryptedText text={String(linkId)} speed={35} />
                 </span>
               </div>
               {accountId && (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-indigo-400 dark:text-indigo-400/80 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
                     Account
                   </span>
-                  <span className="font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-mono text-xs font-semibold text-indigo-400">
                     {accountId}
                   </span>
                 </div>
@@ -193,19 +198,19 @@ export const OAuthLinksPage: React.FC = () => {
         return (
           <div className="inline-flex items-center">
             {isGoogle && (
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 shadow-2xs">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-2xs">
                 <GoogleIcon />
                 <span>Google</span>
               </span>
             )}
             {isGithub && (
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 border border-gray-800 dark:border-white shadow-2xs">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-900 text-white border border-zinc-700 shadow-2xs">
                 <Github className="w-3.5 h-3.5 shrink-0" />
                 <span>GitHub</span>
               </span>
             )}
             {!isGoogle && !isGithub && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20 uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>{item.provider}</span>
               </span>
@@ -219,8 +224,8 @@ export const OAuthLinksPage: React.FC = () => {
       sortable: true,
       accessorKey: 'provider_user_id' as const,
       cell: (item: OAuthLink) => (
-        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-100/80 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/60 font-mono text-xs font-medium text-gray-800 dark:text-gray-200">
-          <Fingerprint className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-xs font-medium text-zinc-200">
+          <Fingerprint className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
           <span className="truncate max-w-[220px]" title={item.provider_user_id}>
             {item.provider_user_id}
           </span>
@@ -232,8 +237,8 @@ export const OAuthLinksPage: React.FC = () => {
       sortable: true,
       accessorKey: 'created_at' as const,
       cell: (item: OAuthLink) => (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
-          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
+          <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
           <span>{formatDate(item.created_at)}</span>
         </div>
       ),
@@ -241,7 +246,12 @@ export const OAuthLinksPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <PageHeader
         title="OAuth Links"
         description="Manage connected social authentication provider accounts linked to local user identity records."
@@ -249,14 +259,14 @@ export const OAuthLinksPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchLinks(page, limit)}
-              className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-colors cursor-pointer"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-zinc-400 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setIsLinkModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md shadow-indigo-600/20 transition-colors cursor-pointer"
             >
               <Link2 className="w-4 h-4" />
               Link Provider Account
@@ -264,6 +274,39 @@ export const OAuthLinksPage: React.FC = () => {
           </div>
         }
       />
+
+      {/* OAuth Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Social Links</span>
+            <Link2 className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={totalCount ?? safeLinks.length} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Google Logins</span>
+            <GoogleIcon />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={googleLinksCount} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">GitHub Logins</span>
+            <Github className="w-4 h-4 text-zinc-300" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={githubLinksCount} duration={1} />}
+          </div>
+        </div>
+      </div>
 
       {/* Query Search Bubble */}
       <div className="w-full">
@@ -298,7 +341,7 @@ export const OAuthLinksPage: React.FC = () => {
         actions={(item) => (
           <button
             onClick={() => setUnlinkingItem(item)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-2xs cursor-pointer"
             title="Unlink Provider Account"
           >
             <Link2Off className="w-3.5 h-3.5" />
@@ -315,14 +358,14 @@ export const OAuthLinksPage: React.FC = () => {
         description="Manually attach an external OAuth provider user ID to an account."
       >
         <form onSubmit={handleCreateLink} className="space-y-4">
-          <FormField label="Target Account ID" required hint="e.g. acc_01h8x8k9z01">
+          <FormField label="Target Account ID" required hint="e.g. 1 or acc_01">
             <input
               type="text"
               value={accountId || ''}
               onChange={(e) => setAccountId(e.target.value)}
-              placeholder="acc_01h8x8k9z01"
+              placeholder="1"
               required
-              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono text-gray-900 dark:text-white"
+              className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl font-mono text-white focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </FormField>
 
@@ -330,7 +373,7 @@ export const OAuthLinksPage: React.FC = () => {
             <select
               value={provider || 'google'}
               onChange={(e) => setProvider(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+              className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors"
             >
               <option value="google">Google</option>
               <option value="github">GitHub</option>
@@ -344,22 +387,22 @@ export const OAuthLinksPage: React.FC = () => {
               onChange={(e) => setProviderUserId(e.target.value)}
               placeholder="google_108239102830"
               required
-              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono text-gray-900 dark:text-white"
+              className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl font-mono text-white focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </FormField>
 
-          <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="pt-4 flex justify-end gap-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setIsLinkModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+              className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs"
+              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md shadow-indigo-600/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? 'Linking...' : 'Create OAuth Link'}
             </button>
@@ -378,6 +421,7 @@ export const OAuthLinksPage: React.FC = () => {
         isDestructive
         isLoading={isSubmitting}
       />
-    </div>
+    </motion.div>
   );
 };
+

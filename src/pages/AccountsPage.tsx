@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Edit2, MoreVertical, Plus, RefreshCw, Shield, Trash2, UserPlus } from 'lucide-react';
+import { Edit2, MoreVertical, Plus, RefreshCw, Shield, Trash2, UserCheck, UserPlus, Users } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Account, AccountRole, AccountStatus, CreateAccountInput } from '../types';
 import { accountsService } from '../services/accounts';
 import { DataTable } from '../components/common/DataTable';
 import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+import { AnimatedCounter } from '../components/reactbits/AnimatedCounter';
+import { DecryptedText } from '../components/reactbits/DecryptedText';
 
 const ACCOUNT_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'email', label: 'Email' },
@@ -195,6 +198,9 @@ export const AccountsPage: React.FC = () => {
 
   const safeAccounts = Array.isArray(accounts) ? accounts : [];
 
+  const superadminCount = safeAccounts.filter((a) => a.role === 'superadmin').length;
+  const activeCount = safeAccounts.filter((a) => a.status === 'active').length;
+
   const columns = [
     {
       header: 'ID',
@@ -202,11 +208,11 @@ export const AccountsPage: React.FC = () => {
       accessorKey: 'id' as const,
       cell: (item: Account) => (
         <div className="space-y-0.5">
-          <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 rounded-lg border border-gray-200/80 dark:border-gray-700/60 inline-block shadow-2xs">
-            #{item.id}
+          <span className="font-mono text-xs font-bold text-zinc-100 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800 inline-block shadow-2xs">
+            #<DecryptedText text={String(item.id)} speed={35} />
           </span>
           {(item as any).account_id && String((item as any).account_id) !== String(item.id) && (
-            <span className="text-[10px] font-mono text-indigo-500 block">Acc ID: {(item as any).account_id}</span>
+            <span className="text-[10px] font-mono text-indigo-400 block">Acc ID: {(item as any).account_id}</span>
           )}
         </div>
       ),
@@ -219,8 +225,8 @@ export const AccountsPage: React.FC = () => {
         <div className="flex items-center gap-3 py-1">
           <UserAvatar src={item.avatar_url} name={item.name} size="md" />
           <div className="space-y-0.5">
-            <p className="font-bold text-xs text-gray-900 dark:text-white leading-tight">{item.name}</p>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono">@{item.handle}</p>
+            <p className="font-bold text-xs text-white leading-tight">{item.name}</p>
+            <p className="text-[11px] text-zinc-400 font-mono">@{item.handle}</p>
           </div>
         </div>
       ),
@@ -231,8 +237,8 @@ export const AccountsPage: React.FC = () => {
       accessorKey: 'email' as const,
       cell: (item: Account) => (
         <div className="space-y-0.5 py-1">
-          <p className="text-xs font-bold text-gray-900 dark:text-white font-mono">{item.email}</p>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500">{item.phone || 'No phone set'}</p>
+          <p className="text-xs font-bold text-white font-mono">{item.email}</p>
+          <p className="text-[11px] text-zinc-400">{item.phone || 'No phone set'}</p>
         </div>
       ),
     },
@@ -270,13 +276,18 @@ export const AccountsPage: React.FC = () => {
       sortable: true,
       accessorKey: 'created_at' as const,
       cell: (item: Account) => (
-        <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{formatDate(item.created_at)}</span>
+        <span className="text-xs font-mono text-zinc-400">{formatDate(item.created_at)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <PageHeader
         title="Accounts Management"
         description="View, search, create, update, and manage all accounts in the tc-auth identity database."
@@ -284,14 +295,14 @@ export const AccountsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchAccounts(page, limit)}
-              className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-colors cursor-pointer"
               title="Refresh table"
             >
-              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-zinc-400 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md shadow-indigo-600/20 transition-colors cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               Create Account
@@ -299,6 +310,39 @@ export const AccountsPage: React.FC = () => {
           </div>
         }
       />
+
+      {/* Account Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Identities Loaded</span>
+            <Users className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={totalCount ?? safeAccounts.length} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Superadmin Accounts</span>
+            <Shield className="w-4 h-4 text-purple-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={superadminCount} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Active Status</span>
+            <UserCheck className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={activeCount} duration={1} />}
+          </div>
+        </div>
+      </div>
 
       {/* Query Search Bubble */}
       <div className="w-full">
@@ -335,14 +379,14 @@ export const AccountsPage: React.FC = () => {
           <div className="flex items-center justify-end gap-1">
             <button
               onClick={() => handleOpenEdit(acc)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-indigo-400 hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Edit Account"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setDeletingAccountId(acc.id)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Delete Account"
             >
               <Trash2 className="w-4 h-4" />
@@ -476,6 +520,6 @@ export const AccountsPage: React.FC = () => {
         isDestructive
         isLoading={isSubmitting}
       />
-    </div>
+    </motion.div>
   );
 };

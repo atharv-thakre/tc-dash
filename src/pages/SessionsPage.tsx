@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Globe, Laptop, RefreshCw, ShieldAlert, ShieldOff, Trash2, Zap } from 'lucide-react';
+import { Calendar, Globe, Laptop, RefreshCw, ShieldAlert, ShieldCheck, ShieldOff, Trash2, Zap } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { SessionRecord } from '../types';
 import { sessionsService } from '../services/sessions';
 import { DataTable } from '../components/common/DataTable';
 import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+import { AnimatedCounter } from '../components/reactbits/AnimatedCounter';
+import { DecryptedText } from '../components/reactbits/DecryptedText';
 
 const SESSION_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'account_id', label: 'Account ID' },
@@ -139,6 +142,8 @@ export const SessionsPage: React.FC = () => {
   };
 
   const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const activeValidSessions = safeSessions.filter((s) => new Date(s.expires_at).getTime() >= Date.now()).length;
+  const expiredSessions = safeSessions.filter((s) => new Date(s.expires_at).getTime() < Date.now()).length;
 
   const columns = [
     {
@@ -147,24 +152,24 @@ export const SessionsPage: React.FC = () => {
       accessorKey: 'id' as const,
       cell: (item: SessionRecord) => (
         <div className="flex items-center gap-3 py-1">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-2xs">
-            <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-2xs">
+            <Zap className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                 Session ID
               </span>
-              <span className="font-mono text-xs font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-200/80 dark:border-gray-700/60">
-                #{item.id}
+              <span className="font-mono text-xs font-bold text-zinc-100 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+                #<DecryptedText text={String(item.id)} speed={35} />
               </span>
             </div>
             {item.account_id && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-indigo-400 dark:text-indigo-400/80 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
                   Account
                 </span>
-                <span className="font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                <span className="font-mono text-xs font-semibold text-indigo-400">
                   {item.account_id}
                 </span>
               </div>
@@ -179,11 +184,11 @@ export const SessionsPage: React.FC = () => {
       accessorKey: 'ip_address' as const,
       cell: (item: SessionRecord) => (
         <div className="space-y-1 py-0.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800/80 border border-gray-200/80 dark:border-gray-700/60 font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
-            <Globe className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-xs font-semibold text-zinc-200">
+            <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
             <span>{item.ip_address || 'Unknown IP'}</span>
           </div>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 max-w-xs truncate pl-0.5" title={item.user_agent}>
+          <p className="text-[11px] text-zinc-400 max-w-xs truncate pl-0.5" title={item.user_agent}>
             {truncateText(item.user_agent || 'Unknown Client', 42)}
           </p>
         </div>
@@ -200,8 +205,8 @@ export const SessionsPage: React.FC = () => {
             <Badge variant={isExpired ? 'danger' : 'success'} className="font-semibold px-2.5 py-0.5">
               {isExpired ? 'Expired' : 'Active'}
             </Badge>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 font-mono flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+            <p className="text-[11px] text-zinc-500 font-mono flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-zinc-500 shrink-0" />
               <span>{formatDate(item.expires_at)}</span>
             </p>
           </div>
@@ -213,8 +218,8 @@ export const SessionsPage: React.FC = () => {
       sortable: true,
       accessorKey: 'created_at' as const,
       cell: (item: SessionRecord) => (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
-          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
+          <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
           <span>{formatDate(item.created_at)}</span>
         </div>
       ),
@@ -222,7 +227,12 @@ export const SessionsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <PageHeader
         title="Active Sessions Management"
         description="Inspect active JWT token sessions, track client IP addresses, and revoke single or bulk session credentials."
@@ -230,32 +240,65 @@ export const SessionsPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => fetchSessions(page, limit)}
-              className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-colors cursor-pointer"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-zinc-400 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setIsRevokeAllAccountOpen(true)}
-              className="px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-2xs"
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
             >
               Revoke Account Sessions
             </button>
             <button
               onClick={() => setIsCleanupOpen(true)}
-              className="px-3 py-2 text-xs font-semibold rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer"
             >
               Clear Expired
             </button>
             <button
               onClick={() => setIsClearAllOpen(true)}
-              className="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors"
+              className="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-colors cursor-pointer"
             >
               Clear All Sessions
             </button>
           </div>
         }
       />
+
+      {/* Session Telemetry Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Active Token Grants</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={totalCount ?? activeValidSessions} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Loaded Records</span>
+            <Zap className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={safeSessions.length} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Expired Grants</span>
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={expiredSessions} duration={1} />}
+          </div>
+        </div>
+      </div>
 
       {/* Query Search Bubble */}
       <div className="w-full">
@@ -290,7 +333,7 @@ export const SessionsPage: React.FC = () => {
         actions={(item) => (
           <button
             onClick={() => setRevokingSessionId(item.id)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-2xs cursor-pointer"
             title="Revoke session"
           >
             <ShieldOff className="w-3.5 h-3.5" />
@@ -307,29 +350,29 @@ export const SessionsPage: React.FC = () => {
         description="Destroys every active session token associated with a specific user account."
       >
         <form onSubmit={handleRevokeAllForAccount} className="space-y-4">
-          <FormField label="Account ID" required hint="e.g. acc_01h8x8k9z01">
+          <FormField label="Account ID" required hint="e.g. 1 or acc_01">
             <input
               type="text"
               value={targetAccountId || ''}
               onChange={(e) => setTargetAccountId(e.target.value)}
-              placeholder="acc_01h8x8k9z01"
+              placeholder="1"
               required
-              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl font-mono text-gray-900 dark:text-white"
+              className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl font-mono text-white focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </FormField>
 
-          <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="pt-4 flex justify-end gap-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={() => setIsRevokeAllAccountOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+              className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs"
+              className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-md shadow-rose-600/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? 'Revoking...' : 'Revoke All Sessions'}
             </button>
@@ -371,6 +414,7 @@ export const SessionsPage: React.FC = () => {
         isDestructive
         isLoading={isSubmitting}
       />
-    </div>
+    </motion.div>
   );
 };
+

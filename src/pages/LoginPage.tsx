@@ -26,7 +26,6 @@ import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
 import { getErrorMessage } from '../services/apiClient';
 import { BorderBeam } from '../components/reactbits/BorderBeam';
-import { ShinyText } from '../components/reactbits/ShinyText';
 import { DecryptedText } from '../components/reactbits/DecryptedText';
 import { ParticlesBackground } from '../components/reactbits/ParticlesBackground';
 import { Magnet } from '../components/reactbits/Magnet';

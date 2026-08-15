@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, KeyRound, Plus, RefreshCw, ShieldAlert, Sparkles, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { CreateOTPResponse, OTPPurpose, OTPRecord } from '../types';
 import { otpService } from '../services/otp';
 import { DataTable } from '../components/common/DataTable';
 import { SearchBubble, SearchFieldOption } from '../components/common/SearchBubble';
 import { Modal } from '../components/common/Modal';
+import { AnimatedCounter } from '../components/reactbits/AnimatedCounter';
+import { DecryptedText } from '../components/reactbits/DecryptedText';
 
 const OTP_SEARCH_FIELDS: SearchFieldOption[] = [
   { key: 'identifier', label: 'Identifier' },
@@ -146,6 +149,8 @@ export const OtpPage: React.FC = () => {
   };
 
   const safeRecords = Array.isArray(records) ? records : [];
+  const activeCount = safeRecords.filter((r) => new Date(r.expires_at).getTime() > Date.now()).length;
+  const expiredCount = safeRecords.filter((r) => new Date(r.expires_at).getTime() <= Date.now()).length;
 
   const columns = [
     {
@@ -154,15 +159,15 @@ export const OtpPage: React.FC = () => {
       accessorKey: 'identifier' as const,
       cell: (item: OTPRecord) => (
         <div className="flex items-center gap-3 py-1">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
-            <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <KeyRound className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="space-y-0.5">
-            <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white block">
+            <span className="font-mono text-xs font-semibold text-zinc-100 block">
               {item.identifier}
             </span>
-            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-200/60 dark:border-gray-700/50 inline-block">
-              #{item.id}
+            <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 inline-block">
+              #<DecryptedText text={String(item.id)} speed={30} />
             </span>
           </div>
         </div>
@@ -197,8 +202,8 @@ export const OtpPage: React.FC = () => {
       accessorKey: 'attempts' as const,
       cell: (item: OTPRecord) => (
         <div>
-          <span className="font-mono text-xs text-gray-400 block">{maskSecret(item.code_hash, 8)}</span>
-          <span className="text-[10px] text-gray-500">Attempts: {item.attempts}</span>
+          <span className="font-mono text-xs text-zinc-400 block">{maskSecret(item.code_hash, 8)}</span>
+          <span className="text-[10px] text-zinc-500">Attempts: {item.attempts}</span>
         </div>
       ),
     },
@@ -213,7 +218,7 @@ export const OtpPage: React.FC = () => {
             <Badge variant={isExpired ? 'danger' : 'success'}>
               {isExpired ? 'Expired' : 'Valid'}
             </Badge>
-            <p className="text-[10px] font-mono text-gray-400 mt-0.5">{formatDate(item.expires_at)}</p>
+            <p className="text-[10px] font-mono text-zinc-400 mt-0.5">{formatDate(item.expires_at)}</p>
           </div>
         );
       },
@@ -221,7 +226,12 @@ export const OtpPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       <PageHeader
         title="OTP Verification Records"
         description="Monitor generated OTP challenge hashes, issue new one-time passcodes, and clean up expired challenge records."
@@ -229,10 +239,10 @@ export const OtpPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchRecords(page, limit)}
-              className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-colors cursor-pointer"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-zinc-400 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => {
@@ -240,26 +250,59 @@ export const OtpPage: React.FC = () => {
                 setIdentifier('');
                 setIsCreateOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md shadow-indigo-600/20 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Generate OTP
             </button>
             <button
               onClick={handleCleanupExpired}
-              className="px-3 py-2 text-xs font-semibold rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer"
             >
               Cleanup Expired
             </button>
             <button
               onClick={() => setIsClearAllOpen(true)}
-              className="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors"
+              className="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-colors cursor-pointer"
             >
               Clear All Records
             </button>
           </div>
         }
       />
+
+      {/* OTP Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total OTP Records</span>
+            <KeyRound className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="text-2xl font-bold text-white font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={totalCount ?? safeRecords.length} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Valid / Active OTPs</span>
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-bold text-emerald-400 font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={activeCount} duration={1} />}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Expired Pending</span>
+            <ShieldAlert className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-2xl font-bold text-rose-400 font-mono mt-2">
+            {isLoading ? <span className="text-zinc-500">...</span> : <AnimatedCounter to={expiredCount} duration={1} />}
+          </div>
+        </div>
+      </div>
 
       {/* Query Search Bubble */}
       <div className="w-full">
@@ -294,7 +337,7 @@ export const OtpPage: React.FC = () => {
         actions={(item) => (
           <button
             onClick={() => setRevokingItem(item)}
-            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 font-semibold text-xs inline-flex items-center gap-1 transition-colors cursor-pointer"
             title="Revoke OTP"
           >
             <Trash2 className="w-4 h-4" />
@@ -322,7 +365,7 @@ export const OtpPage: React.FC = () => {
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="user@example.com"
                 required
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </FormField>
 
@@ -330,7 +373,7 @@ export const OtpPage: React.FC = () => {
               <select
                 value={purpose || 'login'}
                 onChange={(e) => setPurpose(e.target.value as OTPPurpose)}
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white"
+                className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors"
               >
                 <option value="login">login</option>
                 <option value="signup">signup</option>
@@ -346,22 +389,22 @@ export const OtpPage: React.FC = () => {
                 min={30}
                 max={86400}
                 required
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-mono"
+                className="w-full px-3.5 py-2 text-sm bg-zinc-900 border border-zinc-800 rounded-xl text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </FormField>
 
-            <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="pt-4 flex justify-end gap-3 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
+                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs"
+                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md shadow-indigo-600/20 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? 'Generating...' : 'Generate OTP'}
               </button>
@@ -369,26 +412,26 @@ export const OtpPage: React.FC = () => {
           </form>
         ) : (
           <div className="space-y-4 text-center py-2">
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
               <span className="text-xs font-bold uppercase tracking-wider block mb-1">Generated Plaintext OTP Code</span>
-              <span className="font-mono text-3xl font-extrabold tracking-widest text-gray-900 dark:text-white my-2 block">
+              <span className="font-mono text-3xl font-extrabold tracking-widest text-white my-2 block">
                 {createdOTPResult.otp}
               </span>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              <p className="text-[11px] text-zinc-400">
                 Expires at: <span className="font-mono">{formatDate(createdOTPResult.expires_at)}</span>
               </p>
             </div>
-            <p className="text-xs text-rose-500 font-medium">
+            <p className="text-xs text-rose-400 font-medium">
               Important: This raw code will not be displayed again. Only the bcrypt hash is persisted in the database.
             </p>
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="pt-3 border-t border-zinc-800">
               <button
                 type="button"
                 onClick={() => {
                   setCreatedOTPResult(null);
                   setIsCreateOpen(false);
                 }}
-                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl cursor-pointer"
               >
                 Done
               </button>
@@ -420,6 +463,7 @@ export const OtpPage: React.FC = () => {
         isDestructive
         isLoading={isSubmitting}
       />
-    </div>
+    </motion.div>
   );
 };
+
