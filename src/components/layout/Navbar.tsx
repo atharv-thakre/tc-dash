@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar, activePat
                   tc<span className="text-indigo-500 dark:text-indigo-400">-</span>auth
                 </span>
                 <span className="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/60 rounded-md leading-none shadow-2xs">
-                  v1.3.1
+                  v1.5.0
                 </span>
               </div>
               <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-zinc-500 hidden sm:block leading-tight">
