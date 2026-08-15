@@ -119,7 +119,7 @@ export function DataTable<T extends { id?: string | number }>({
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={cn('px-6 py-3.5 tracking-wider uppercase text-xs font-semibold', col.className)}
+                  className={cn('px-3.5 sm:px-6 py-3 sm:py-3.5 tracking-wider uppercase text-[11px] sm:text-xs font-semibold whitespace-nowrap', col.className)}
                 >
                   {col.sortable && col.accessorKey ? (
                     <button
@@ -142,7 +142,7 @@ export function DataTable<T extends { id?: string | number }>({
                   )}
                 </th>
               ))}
-              {actions && <th className="px-6 py-3.5 text-right tracking-wider uppercase text-xs font-semibold">Actions</th>}
+              {actions && <th className="px-3.5 sm:px-6 py-3 sm:py-3.5 text-right tracking-wider uppercase text-[11px] sm:text-xs font-semibold">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -189,11 +189,11 @@ export function DataTable<T extends { id?: string | number }>({
                   className="hover:bg-slate-50/60 dark:hover:bg-zinc-900/50 transition-colors"
                 >
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className={cn('px-6 py-4 text-slate-800 dark:text-zinc-200', col.className)}>
+                    <td key={cIdx} className={cn('px-3.5 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-800 dark:text-zinc-200', col.className)}>
                       {col.cell ? col.cell(item) : col.accessorKey ? String(item[col.accessorKey] ?? '') : ''}
                     </td>
                   ))}
-                  {actions && <td className="px-6 py-4 text-right whitespace-nowrap">{actions(item)}</td>}
+                  {actions && <td className="px-3.5 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap text-xs">{actions(item)}</td>}
                 </tr>
               ))
             )}
@@ -203,7 +203,7 @@ export function DataTable<T extends { id?: string | number }>({
 
       {/* Pagination Bar */}
       {!isLoading && !error && data.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 text-xs text-slate-500 dark:text-zinc-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3.5 sm:px-6 py-3 sm:py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 text-xs text-slate-500 dark:text-zinc-400">
           <div className="flex items-center gap-4">
             <div>
               Showing <span className="font-semibold text-slate-900 dark:text-zinc-100">{startEntry}</span> to{' '}

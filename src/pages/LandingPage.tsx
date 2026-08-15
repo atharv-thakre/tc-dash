@@ -511,21 +511,36 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             <BorderBeam size={260} duration={12} colorFrom="#6366f1" colorTo="#a855f7" />
 
             {/* Code Tabs Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950/80">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="ml-2 text-xs font-mono font-bold text-zinc-400">
-                  tc_auth_python_suite
-                </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 border-b border-zinc-800 bg-zinc-950/80">
+              <div className="flex items-center justify-between sm:justify-start gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500/80" />
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500/80" />
+                  <span className="ml-1 sm:ml-2 text-xs font-mono font-bold text-zinc-400">
+                    tc_auth_python_suite
+                  </span>
+                </div>
+
+                {/* Mobile Copy Code */}
+                <button
+                  onClick={() => copyToClipboard(codeSnippets[activeCodeTab], `${activeCodeTab} snippet`)}
+                  className="sm:hidden flex items-center gap-1 px-2 py-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  {copiedSnippet === `${activeCodeTab} snippet` ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  <span className="text-[11px]">{copiedSnippet === `${activeCodeTab} snippet` ? 'Copied' : 'Copy'}</span>
+                </button>
               </div>
 
               {/* Tabs */}
-              <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg overflow-x-auto max-w-full">
                 <button
                   onClick={() => setActiveCodeTab('init')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     activeCodeTab === 'init'
                       ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
                       : 'text-zinc-400 hover:text-white'
@@ -535,7 +550,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 </button>
                 <button
                   onClick={() => setActiveCodeTab('otp')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     activeCodeTab === 'otp'
                       ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
                       : 'text-zinc-400 hover:text-white'
@@ -545,17 +560,17 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 </button>
                 <button
                   onClick={() => setActiveCodeTab('sessions')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     activeCodeTab === 'sessions'
                       ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  Session Control
+                  Sessions
                 </button>
                 <button
                   onClick={() => setActiveCodeTab('rest')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     activeCodeTab === 'rest'
                       ? 'bg-zinc-800 text-indigo-400 shadow-2xs'
                       : 'text-zinc-400 hover:text-white'
@@ -565,10 +580,10 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
                 </button>
               </div>
 
-              {/* Copy Code */}
+              {/* Desktop Copy Code */}
               <button
                 onClick={() => copyToClipboard(codeSnippets[activeCodeTab], `${activeCodeTab} snippet`)}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 {copiedSnippet === `${activeCodeTab} snippet` ? (
                   <>

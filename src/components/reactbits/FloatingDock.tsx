@@ -35,7 +35,7 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
       }`}
     >
       {/* Tooltip */}
-      <div className="pointer-events-none absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-700 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+      <div className="pointer-events-none absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-700 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50 hidden sm:block">
         {title}
       </div>
 
@@ -118,14 +118,14 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
 
   return (
     <>
-      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ${className}`}>
+      <div className={`fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1rem)] px-2 ${className}`}>
         <motion.div
           onMouseMove={(e) => mouseX.set(e.pageX)}
           onMouseLeave={() => mouseX.set(Infinity)}
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.4 }}
-          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-3xl bg-zinc-950/80 border border-zinc-800/80 backdrop-blur-xl shadow-2xl shadow-indigo-950/20"
+          className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-xl shadow-2xl shadow-indigo-950/30 overflow-x-auto max-w-full"
         >
           {dockItems.map((item, i) => (
             <DockIcon

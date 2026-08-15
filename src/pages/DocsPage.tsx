@@ -37,6 +37,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
   const [searchQuery, setSearchQuery] = useState('');
   const [methodSearch, setMethodSearch] = useState('');
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [isMobileListOpen, setIsMobileListOpen] = useState(false);
 
   // Synchronize state if props change from sidebar navigation
   React.useEffect(() => {
@@ -73,6 +74,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
     setActiveCategory(cat);
     setActiveDocId(id);
     setMethodSearch('');
+    setIsMobileListOpen(false);
     if (onNavigate) {
       onNavigate(`/docs/${cat}/${id}`);
     }
@@ -92,17 +94,17 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
       className="space-y-6 max-w-7xl mx-auto pb-12"
     >
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
               <BookOpen className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
               Documentation & SDK Reference
             </h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 pl-11">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 pl-9 sm:pl-11">
             Complete technical specification and developer reference for <code className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">tc_auth</code>.
           </p>
         </div>
@@ -120,10 +122,25 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
         </div>
       </div>
 
+      {/* Mobile Active Module Bar & Toggle */}
+      <div className="lg:hidden p-3.5 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3 shadow-2xs">
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 shrink-0">Current:</span>
+          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate">{activeDoc?.title}</span>
+        </div>
+        <button
+          onClick={() => setIsMobileListOpen(!isMobileListOpen)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60 text-xs font-semibold shrink-0 cursor-pointer"
+        >
+          <span>{isMobileListOpen ? 'Hide Index' : 'Switch Module'}</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMobileListOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
       {/* Main Workspace Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Navigation Sidebar List */}
-        <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+        <div className={`lg:col-span-4 xl:col-span-3 space-y-4 ${isMobileListOpen ? 'block' : 'hidden lg:block'}`}>
           {/* Category Switcher */}
           <div className="flex p-1 bg-slate-100 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 rounded-xl">
             <button

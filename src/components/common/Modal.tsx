@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
       />
       <div
         className={cn(
-          'relative w-full rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl z-10 overflow-hidden transform transition-all',
+          'relative w-full rounded-2xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 p-4 sm:p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto transform transition-all',
           maxWidthClasses[maxWidth]
         )}
       >

@@ -175,12 +175,12 @@ export const PlaygroundShowcase: React.FC<PlaygroundShowcaseProps> = ({ onNaviga
       <BorderBeam size={260} duration={16} colorFrom="#6366f1" colorTo="#a855f7" />
 
       {/* Top Segmented Navigation Tab Bar */}
-      <div className="p-3 bg-zinc-900/70 border-b border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-950/80 border border-zinc-800/80 w-full sm:w-auto">
+      <div className="p-2.5 sm:p-3 bg-zinc-900/70 border-b border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-xl bg-zinc-950/80 border border-zinc-800/80 w-full sm:w-auto overflow-x-auto">
           {[
-            { id: 'otp', label: '1. Email OTP Simulator', icon: Mail, tag: 'Passwordless' },
-            { id: 'jwt', label: '2. JWT Claims Inspector', icon: ShieldCheck, tag: 'Stateful' },
-            { id: 'rest', label: '3. Live REST Probe', icon: Terminal, tag: 'API Engine' },
+            { id: 'otp', label: '1. Email OTP', fullLabel: '1. Email OTP Simulator', icon: Mail, tag: 'Passwordless' },
+            { id: 'jwt', label: '2. JWT Claims', fullLabel: '2. JWT Claims Inspector', icon: ShieldCheck, tag: 'Stateful' },
+            { id: 'rest', label: '3. REST Probe', fullLabel: '3. Live REST Probe', icon: Terminal, tag: 'API Engine' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -188,7 +188,7 @@ export const PlaygroundShowcase: React.FC<PlaygroundShowcaseProps> = ({ onNaviga
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex-1 sm:flex-initial select-none ${
+                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex-1 sm:flex-initial select-none ${
                   isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
                 }`}
               >
@@ -201,7 +201,8 @@ export const PlaygroundShowcase: React.FC<PlaygroundShowcaseProps> = ({ onNaviga
                 )}
                 <span className="relative z-10 flex items-center gap-1.5 whitespace-nowrap">
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-200' : 'text-zinc-400'}`} />
-                  <span className="font-medium">{tab.label}</span>
+                  <span className="font-medium hidden sm:inline">{tab.fullLabel}</span>
+                  <span className="font-medium sm:hidden">{tab.label}</span>
                 </span>
               </button>
             );
