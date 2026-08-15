@@ -408,45 +408,47 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
         {/* HERO SECTION */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 lg:pt-24 lg:pb-28">
           <div className="text-center max-w-3xl mx-auto space-y-6">
-            {/* Version Announcement Pill with Decrypted Animation */}
+            {/* Clean, Elegant Version Announcement Pill */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-950/60 border border-indigo-800/80 text-indigo-300 shadow-2xs"
+              className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-zinc-900/90 border border-zinc-800 text-zinc-300 shadow-sm"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-              <span>
-                <DecryptedText
-                  text="v1.5.0 Released • Modular Python Auth Suite"
-                  speed={40}
-                  maxIterations={12}
-                  animateOn="view"
-                />
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-bold text-white">v1.5.0</span>
+                <span className="text-zinc-600">•</span>
+                <span className="text-indigo-300">Modular Python Auth Suite</span>
+              </div>
               <span className="text-zinc-700">|</span>
-              <span className="font-mono text-[11px] opacity-90 text-indigo-200">
-                <ShinyText text="pip install tc_auth" speed={4} />
-              </span>
+              <button
+                onClick={() => copyToClipboard('pip install tc_auth', 'pip install tc_auth')}
+                className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                title="Copy install command"
+              >
+                <Terminal className="w-3 h-3 text-indigo-400" />
+                <span>pip install tc_auth</span>
+                {copiedSnippet === 'pip install tc_auth' ? (
+                  <Check className="w-3 h-3 text-emerald-400" />
+                ) : (
+                  <Copy className="w-3 h-3 text-zinc-500" />
+                )}
+              </button>
             </motion.div>
 
-            {/* SplitText Animated Headline */}
-            <div className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1] flex flex-col items-center">
-              <SplitText
-                text="Authentication Made"
-                className="justify-center"
-                delay={40}
-              />
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mt-1">
-                <DecryptedText
-                  text="Modular, Secure & Pythonic"
-                  speed={35}
-                  maxIterations={14}
-                  animateOn="view"
-                  encryptedClassName="text-purple-400"
-                />
+            {/* High-Impact Display Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]"
+            >
+              Authentication Made{' '}
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+                Modular, Secure & Pythonic
               </span>
-            </div>
+            </motion.h1>
 
             {/* Crisp Feature Pills Interactive Component */}
             <div className="py-2">
@@ -688,81 +690,148 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(99, 102, 241, 0.2)" borderColor="rgba(99, 102, 241, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-900 flex items-center justify-center text-indigo-400 mb-4">
-                <Shield className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(99, 102, 241, 0.2)" borderColor="rgba(99, 102, 241, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-950/70 border border-indigo-800/80 flex items-center justify-center text-indigo-400 shadow-md shadow-indigo-950/50">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-indigo-300 bg-indigo-950/60 border border-indigo-800/60">
+                    Auth Strategies
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Multi-Strategy Authentication
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Support bcrypt-hashed passwords, passwordless 6-digit email OTPs, Google OpenID Connect, and GitHub OAuth 2.0 within a single unified account system.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Multi-Strategy Authentication
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Support bcrypt-hashed passwords, passwordless 6-digit email OTPs, Google OpenID Connect, and GitHub OAuth 2.0 in a unified user model.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Bcrypt</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Email OTP</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-indigo-300 bg-indigo-950/50 border border-indigo-800/50">Google / GitHub</span>
+              </div>
             </SpotlightCard>
 
             {/* Feature 2: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(168, 85, 247, 0.2)" borderColor="rgba(168, 85, 247, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-purple-950/60 border border-purple-900 flex items-center justify-center text-purple-400 mb-4">
-                <Lock className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(168, 85, 247, 0.2)" borderColor="rgba(168, 85, 247, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-purple-950/70 border border-purple-800/80 flex items-center justify-center text-purple-400 shadow-md shadow-purple-950/50">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-purple-300 bg-purple-950/60 border border-purple-800/60">
+                    Session Security
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Stateful JWT Sessions
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Every issued token contains a database-backed session ID (<code className="font-mono text-indigo-300 text-xs">sid</code>). Revoke compromised devices instantly without waiting for JWT expiration.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Stateful JWT Sessions
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Tokens contain active session IDs (<code className="font-mono text-indigo-400">sid</code>) backed by the database. Revoke compromised devices instantly without waiting for JWT expiry.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-purple-300 bg-purple-950/50 border border-purple-800/50">&lt; 1ms Revocation</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Multi-Device</span>
+              </div>
             </SpotlightCard>
 
             {/* Feature 3: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(16, 185, 129, 0.2)" borderColor="rgba(16, 185, 129, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-900 flex items-center justify-center text-emerald-400 mb-4">
-                <Zap className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(16, 185, 129, 0.2)" borderColor="rgba(16, 185, 129, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-950/70 border border-emerald-800/80 flex items-center justify-center text-emerald-400 shadow-md shadow-emerald-950/50">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-emerald-300 bg-emerald-950/60 border border-emerald-800/60">
+                    Pythonic DX
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Pure Python SDK Architecture
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Clean, modular class structure (<code className="font-mono text-emerald-300 text-xs">auth.account</code>, <code className="font-mono text-emerald-300 text-xs">auth.otp</code>, <code className="font-mono text-emerald-300 text-xs">auth.session</code>) designed for FastAPI and SQLAlchemy.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Pure Python SDK Architecture
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Clean, modular class structure (<code className="font-mono text-indigo-400">auth.account</code>, <code className="font-mono text-indigo-400">auth.otp</code>, <code className="font-mono text-indigo-400">auth.session</code>) designed for seamless backend integration.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-emerald-300 bg-emerald-950/50 border border-emerald-800/50">SQLAlchemy ORM</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Pydantic Schemas</span>
+              </div>
             </SpotlightCard>
 
             {/* Feature 4: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(245, 158, 11, 0.2)" borderColor="rgba(245, 158, 11, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-900 flex items-center justify-center text-amber-400 mb-4">
-                <Users className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(245, 158, 11, 0.2)" borderColor="rgba(245, 158, 11, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-amber-950/70 border border-amber-800/80 flex items-center justify-center text-amber-400 shadow-md shadow-amber-950/50">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-amber-300 bg-amber-950/60 border border-amber-800/60">
+                    Access Control
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Granular Role Hierarchy (RBAC)
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Built-in <code className="font-mono text-amber-300 text-xs">user</code>, <code className="font-mono text-indigo-300 text-xs">admin</code>, and <code className="font-mono text-purple-300 text-xs">superadmin</code> authorization tiers with route guards and privilege escalation prevention.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Granular Role Hierarchy (RBAC)
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Built-in <code className="font-mono text-amber-400">user</code>, <code className="font-mono text-indigo-400">admin</code>, and <code className="font-mono text-purple-400">superadmin</code> authorization tiers with role checks and privilege guards.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-amber-300 bg-amber-950/50 border border-amber-800/50">3-Tier RBAC</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Route Guards</span>
+              </div>
             </SpotlightCard>
 
             {/* Feature 5: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(14, 165, 233, 0.2)" borderColor="rgba(14, 165, 233, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-sky-950/60 border border-sky-900 flex items-center justify-center text-sky-400 mb-4">
-                <Mail className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(14, 165, 233, 0.2)" borderColor="rgba(14, 165, 233, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-sky-950/70 border border-sky-800/80 flex items-center justify-center text-sky-400 shadow-md shadow-sky-950/50">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-sky-300 bg-sky-950/60 border border-sky-800/60">
+                    Passwordless
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Built-in Email OTP Engine
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Direct SMTP integration for dispatching time-limited verification codes, signup confirmations, and password resets with rate limits and attempt tracking.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Built-in Email OTP Engine
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Direct SMTP integration for sending verification codes, signup authorizations, and password resets with brute-force attempt limits.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-sky-300 bg-sky-950/50 border border-sky-800/50">SMTP Ready</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">Brute-Force Guard</span>
+              </div>
             </SpotlightCard>
 
             {/* Feature 6: SpotlightCard */}
-            <SpotlightCard className="p-6 h-full" spotlightColor="rgba(236, 72, 153, 0.2)" borderColor="rgba(236, 72, 153, 0.4)">
-              <div className="w-12 h-12 rounded-xl bg-pink-950/60 border border-pink-900 flex items-center justify-center text-pink-400 mb-4">
-                <Sliders className="w-6 h-6" />
+            <SpotlightCard className="p-7 h-full flex flex-col justify-between" spotlightColor="rgba(236, 72, 153, 0.2)" borderColor="rgba(236, 72, 153, 0.5)">
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-pink-950/70 border border-pink-800/80 flex items-center justify-center text-pink-400 shadow-md shadow-pink-950/50">
+                    <Sliders className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase text-pink-300 bg-pink-950/60 border border-pink-800/60">
+                    Admin Portal
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2.5 tracking-tight">
+                  Real-Time Admin Control Panel
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  Interactive web dashboard for auditing active sessions, inspecting user accounts, managing OAuth providers, and updating SMTP configurations at runtime.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Real-Time Admin Control Panel
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Full web dashboard for auditing active sessions, inspecting accounts, managing OAuth links, and updating SMTP credentials at runtime.
-              </p>
+              <div className="pt-5 mt-5 border-t border-zinc-800/80 flex flex-wrap gap-1.5">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-pink-300 bg-pink-950/50 border border-pink-800/50">Live Telemetry</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-800/60 border border-zinc-700/50">One-Click Revoke</span>
+              </div>
             </SpotlightCard>
           </div>
         </section>
