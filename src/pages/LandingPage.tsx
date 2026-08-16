@@ -225,12 +225,22 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
             >
               Python Docs
             </button>
-            <button
-              onClick={() => onNavigate('/docs/api/login-routes')}
-              className="hover:text-indigo-400 transition-colors cursor-pointer whitespace-nowrap"
+            <a
+              href="https://github.com/atharv-thakre/tc_auth"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-indigo-400 transition-colors whitespace-nowrap"
             >
-              REST API
-            </button>
+              tc_auth (Python)
+            </a>
+            <a
+              href="https://github.com/atharv-thakre/tc-dash"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-indigo-400 transition-colors whitespace-nowrap"
+            >
+              tc-dash (UI)
+            </a>
           </nav>
 
           {/* Right Action Buttons */}
@@ -828,30 +838,79 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
 
       {/* FOOTER */}
       <footer className="border-t border-zinc-800 bg-zinc-950 py-12 pb-24 text-xs text-zinc-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <TcAuthLogo size="sm" version="v1.5.0" />
-            <span>•</span>
-            <span>Modular Authentication Framework for Python</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <TcAuthLogo size="sm" version="v1.5.0" />
+              <span>•</span>
+              <span>Modular Authentication Framework for Python</span>
+              <span>•</span>
+              <span>
+                Created by{' '}
+                <a
+                  href="https://github.com/atharv-thakre"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-zinc-300 hover:text-indigo-400 transition-colors underline decoration-zinc-700 underline-offset-4"
+                >
+                  Atharv Thakre
+                </a>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-semibold">
+              <a
+                href="https://github.com/atharv-thakre/tc_auth"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-indigo-400 transition-colors flex items-center gap-1.5 text-zinc-300"
+              >
+                <span>GitHub: tc_auth</span>
+                <ArrowRight className="w-3 h-3 -rotate-45" />
+              </a>
+              <a
+                href="https://github.com/atharv-thakre/tc-dash"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-indigo-400 transition-colors flex items-center gap-1.5 text-zinc-300"
+              >
+                <span>GitHub: tc-dash</span>
+                <ArrowRight className="w-3 h-3 -rotate-45" />
+              </a>
+              <button onClick={() => onNavigate('/docs/lib/setup')} className="hover:text-indigo-400 cursor-pointer">
+                Docs
+              </button>
+              <button onClick={handleLaunchDemo} className="hover:text-amber-400 cursor-pointer flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Live Demo</span>
+              </button>
+              <button onClick={() => onNavigate('/login')} className="hover:text-indigo-400 cursor-pointer">
+                Sign In
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6 font-semibold">
-            <button onClick={() => onNavigate('/docs/lib/setup')} className="hover:text-indigo-400 cursor-pointer">
-              Library Docs
-            </button>
-            <button onClick={() => onNavigate('/docs/api/login-routes')} className="hover:text-indigo-400 cursor-pointer">
-              REST API
-            </button>
-            <button onClick={handleLaunchDemo} className="hover:text-amber-400 cursor-pointer flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>Live Demo</span>
-            </button>
-            <button onClick={() => onNavigate('/login')} className="hover:text-indigo-400 cursor-pointer">
-              Admin Login
-            </button>
-            <button onClick={() => onNavigate('/signup')} className="hover:text-indigo-400 cursor-pointer">
-              Register
-            </button>
+          <div className="pt-4 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-600 gap-2">
+            <div>© {new Date().getFullYear()} Atharv Thakre. Open source under MIT License.</div>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/atharv-thakre/tc_auth"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-zinc-400 transition-colors"
+              >
+                Python Backend (FastAPI / Flask)
+              </a>
+              <span>•</span>
+              <a
+                href="https://github.com/atharv-thakre/tc-dash"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-zinc-400 transition-colors"
+              >
+                React Admin Dashboard
+              </a>
+            </div>
           </div>
         </div>
       </footer>

@@ -105,20 +105,45 @@ export const DocsPage: React.FC<DocsPageProps> = ({ section = 'lib', docId = 'se
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-zinc-400 pl-9 sm:pl-11">
-            Complete technical specification and developer reference for <code className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">tc_auth</code>.
+            Complete technical specification and developer reference for <code className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">tc_auth</code> by <span className="font-semibold text-slate-700 dark:text-zinc-300">Atharv Thakre</span>.
           </p>
         </div>
 
-        {/* Global Docs Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search modules & SDK..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-600 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/50"
-          />
+        {/* Global Docs Search & GitHub Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <a
+              href="https://github.com/atharv-thakre/tc_auth"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-semibold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 rounded-xl transition-colors"
+              title="View Python Source Code on GitHub"
+            >
+              <span>tc_auth</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+            <a
+              href="https://github.com/atharv-thakre/tc-dash"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-semibold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 rounded-xl transition-colors"
+              title="View UI Source Code on GitHub"
+            >
+              <span>tc-dash</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+          </div>
+
+          <div className="relative w-full sm:w-60">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search modules..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-600 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/50"
+            />
+          </div>
         </div>
       </div>
 

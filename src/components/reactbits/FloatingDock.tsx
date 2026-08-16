@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'motion/react';
-import { KeyRound, FileCode2, BookOpen, Sparkles, LogIn, Server } from 'lucide-react';
+import { KeyRound, FileCode2, BookOpen, Sparkles, LogIn, Server, Github } from 'lucide-react';
 import { ApiConfigModal } from '../common/ApiConfigModal';
 
 interface DockItemProps {
@@ -161,6 +161,16 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
       dotColorClass: 'bg-purple-400',
       shadowClass: 'shadow-purple-950/60',
       hoverBorderClass: 'hover:border-purple-500/60 hover:bg-purple-500/10 text-zinc-300 hover:text-purple-300',
+    },
+    {
+      title: 'GitHub: tc_auth (Python)',
+      icon: <Github className="w-4 h-4 text-zinc-200" />,
+      onClick: () => window.open('https://github.com/atharv-thakre/tc_auth', '_blank'),
+      textColorClass: 'text-zinc-200',
+      borderColorClass: 'border-zinc-500/50',
+      dotColorClass: 'bg-zinc-300',
+      shadowClass: 'shadow-zinc-950/60',
+      hoverBorderClass: 'hover:border-zinc-500/60 hover:bg-zinc-800/40 text-zinc-300 hover:text-white',
     },
     {
       title: 'Configure Server URL',
