@@ -695,8 +695,8 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               className="space-y-4"
             >
               {!otpSent ? (
-                <form onSubmit={handleRequestOtp} className="space-y-4">
-                  <FormField label="Email Address" required hint="Enter your email to receive a one-time sign-in code.">
+                <form onSubmit={handleRequestOtp} noValidate={apiMode === 'demo'} className="space-y-4">
+                  <FormField label="Email Address" required={apiMode !== 'demo'} hint="Enter your email to receive a one-time sign-in code.">
                     <div className="relative">
                       <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
                       <input
@@ -704,7 +704,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                         value={otpEmail || ''}
                         onChange={(e) => setOtpEmail(e.target.value)}
                         placeholder="admin@tcauth.dev"
-                        required
+                        required={apiMode !== 'demo'}
                         className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
                       />
                     </div>
@@ -712,6 +712,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
                   <button
                     type="submit"
+                    formNoValidate={apiMode === 'demo'}
                     disabled={isSendingOtp}
                     className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
                       apiMode === 'demo'
@@ -743,7 +744,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <form onSubmit={handleVerifyOtp} noValidate={apiMode === 'demo'} className="space-y-4">
                   <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Mail className="w-3.5 h-3.5 text-indigo-400" />
@@ -758,13 +759,13 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                     </button>
                   </div>
 
-                  <FormField label="Enter Verification Code" required hint="Enter the 6-digit code sent to your inbox.">
+                  <FormField label="Enter Verification Code" required={apiMode !== 'demo'} hint="Enter the 6-digit code sent to your inbox.">
                     <input
                       type="text"
                       value={otpCode || ''}
                       onChange={(e) => setOtpCode(e.target.value)}
                       placeholder="Enter 6-digit code"
-                      required
+                      required={apiMode !== 'demo'}
                       maxLength={12}
                       className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
                     />
@@ -788,6 +789,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
                   <button
                     type="submit"
+                    formNoValidate={apiMode === 'demo'}
                     disabled={isLoading}
                     className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
                       apiMode === 'demo'
@@ -830,8 +832,8 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               </div>
 
               {!resetSent ? (
-                <form onSubmit={handleRequestResetOtp} className="space-y-4">
-                  <FormField label="Registered Email" required hint="Enter your account email to receive a recovery code.">
+                <form onSubmit={handleRequestResetOtp} noValidate={apiMode === 'demo'} className="space-y-4">
+                  <FormField label="Registered Email" required={apiMode !== 'demo'} hint="Enter your account email to receive a recovery code.">
                     <div className="relative">
                       <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
                       <input
@@ -839,7 +841,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                         placeholder="you@example.com"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        required
+                        required={apiMode !== 'demo'}
                         className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
                       />
                     </div>
@@ -847,6 +849,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
                   <button
                     type="submit"
+                    formNoValidate={apiMode === 'demo'}
                     disabled={isSendingReset}
                     className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
                       apiMode === 'demo'
@@ -878,7 +881,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+                <form onSubmit={handleForgotPassword} noValidate={apiMode === 'demo'} className="space-y-4">
                   <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Mail className="w-3.5 h-3.5 text-indigo-400" />
@@ -893,13 +896,13 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                     </button>
                   </div>
 
-                  <FormField label="Enter Verification Code" required hint="Enter the 6-digit code sent to your inbox.">
+                  <FormField label="Enter Verification Code" required={apiMode !== 'demo'} hint="Enter the 6-digit code sent to your inbox.">
                     <input
                       type="text"
                       value={forgotOtp}
                       onChange={(e) => setForgotOtp(e.target.value)}
                       placeholder="Enter 6-digit code"
-                      required
+                      required={apiMode !== 'demo'}
                       maxLength={12}
                       className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
                     />
@@ -923,6 +926,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
                   <button
                     type="submit"
+                    formNoValidate={apiMode === 'demo'}
                     disabled={isLoading}
                     className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
                       apiMode === 'demo'
