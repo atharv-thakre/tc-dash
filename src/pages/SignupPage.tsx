@@ -229,7 +229,7 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
                 {isActive && (
                   <motion.div
                     layoutId="activeSignupTab"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    transition={{ type: 'spring', stiffness: 600, damping: 32 }}
                     className="absolute inset-0 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-xs -z-10"
                   />
                 )}

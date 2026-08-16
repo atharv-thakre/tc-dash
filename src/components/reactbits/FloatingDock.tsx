@@ -38,19 +38,19 @@ const DockIcon: React.FC<DockItemProps> = ({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-120, 0, 120], [42, 58, 42]);
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 180, damping: 14 });
+  const widthSync = useTransform(distance, [-110, 0, 110], [42, 58, 42]);
+  const width = useSpring(widthSync, { mass: 0.05, stiffness: 650, damping: 26 });
 
   return (
     <div className="relative">
-      {/* Animated Floating Tooltip Following Option Color */}
+      {/* Fast, crisp floating tooltip */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.85, x: '-50%' }}
+            initial={{ opacity: 0, y: 4, scale: 0.94, x: '-50%' }}
             animate={{ opacity: 1, y: -4, scale: 1, x: '-50%' }}
-            exit={{ opacity: 0, y: 6, scale: 0.9, x: '-50%' }}
-            transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+            exit={{ opacity: 0, y: 2, scale: 0.94, x: '-50%' }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
             className={`pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-zinc-950/95 border ${borderColorClass} text-[11px] font-semibold tracking-wide whitespace-nowrap shadow-xl ${shadowClass} backdrop-blur-md z-50 flex items-center gap-1.5`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} animate-pulse`} />
@@ -65,7 +65,7 @@ const DockIcon: React.FC<DockItemProps> = ({
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`relative flex items-center justify-center rounded-2xl border transition-all duration-200 cursor-pointer select-none ${
+        className={`relative flex items-center justify-center rounded-2xl border cursor-pointer select-none transition-colors duration-150 ${
           active
             ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/30'
             : `bg-zinc-900/90 border-zinc-800 text-zinc-400 ${hoverBorderClass}`
@@ -190,9 +190,9 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
         <motion.div
           onMouseMove={(e) => mouseX.set(e.pageX)}
           onMouseLeave={() => mouseX.set(Infinity)}
-          initial={{ y: 50, opacity: 0 }}
+          initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-xl shadow-2xl shadow-indigo-950/30 overflow-visible max-w-full"
         >
           {dockItems.map((item, i) => (

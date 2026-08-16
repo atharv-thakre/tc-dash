@@ -542,7 +542,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 {isActive && (
                   <motion.div
                     layoutId="activeLoginTab"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    transition={{ type: 'spring', stiffness: 600, damping: 32 }}
                     className="absolute inset-0 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-xs -z-10"
                   />
                 )}
