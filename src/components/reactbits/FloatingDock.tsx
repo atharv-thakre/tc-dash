@@ -10,9 +10,26 @@ interface DockItemProps {
   onClick: () => void;
   badge?: string;
   active?: boolean;
+  textColorClass?: string;
+  borderColorClass?: string;
+  dotColorClass?: string;
+  shadowClass?: string;
+  hoverBorderClass?: string;
 }
 
-const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge, active }) => {
+const DockIcon: React.FC<DockItemProps> = ({
+  mouseX,
+  title,
+  icon,
+  onClick,
+  badge,
+  active,
+  textColorClass = 'text-indigo-300',
+  borderColorClass = 'border-indigo-500/40',
+  dotColorClass = 'bg-indigo-400',
+  shadowClass = 'shadow-indigo-950/40',
+  hoverBorderClass = 'hover:border-indigo-500/40 hover:bg-indigo-500/10',
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -26,7 +43,7 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
 
   return (
     <div className="relative">
-      {/* Animated Floating Tooltip */}
+      {/* Animated Floating Tooltip Following Option Color */}
       <AnimatePresence>
         {isHovered && (
           <motion.div
@@ -34,10 +51,10 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
             animate={{ opacity: 1, y: -4, scale: 1, x: '-50%' }}
             exit={{ opacity: 0, y: 6, scale: 0.9, x: '-50%' }}
             transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-            className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-zinc-950/95 border border-indigo-500/50 text-white text-[11px] font-semibold tracking-wide whitespace-nowrap shadow-xl shadow-black/80 backdrop-blur-md z-50 flex items-center gap-1.5"
+            className={`pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-zinc-950/95 border ${borderColorClass} text-[11px] font-semibold tracking-wide whitespace-nowrap shadow-xl ${shadowClass} backdrop-blur-md z-50 flex items-center gap-1.5`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            <span>{title}</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${dotColorClass} animate-pulse`} />
+            <span className={textColorClass}>{title}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -48,10 +65,10 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`relative flex items-center justify-center rounded-2xl border transition-colors cursor-pointer select-none ${
+        className={`relative flex items-center justify-center rounded-2xl border transition-all duration-200 cursor-pointer select-none ${
           active
             ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/30'
-            : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700'
+            : `bg-zinc-900/90 border-zinc-800 text-zinc-400 ${hoverBorderClass}`
         }`}
       >
         {badge && (
@@ -96,12 +113,22 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
     onClick: () => void;
     badge?: string;
     active?: boolean;
+    textColorClass: string;
+    borderColorClass: string;
+    dotColorClass: string;
+    shadowClass: string;
+    hoverBorderClass: string;
   }> = [
     {
       title: 'Enter Demo Mode',
       icon: <Sparkles className="w-4 h-4 text-amber-400" />,
       onClick: onLaunchDemo || (() => onNavigate('/dashboard')),
       badge: 'Demo',
+      textColorClass: 'text-amber-300',
+      borderColorClass: 'border-amber-500/50',
+      dotColorClass: 'bg-amber-400',
+      shadowClass: 'shadow-amber-950/60',
+      hoverBorderClass: 'hover:border-amber-500/60 hover:bg-amber-500/10 text-zinc-300 hover:text-amber-300',
     },
     {
       title: 'Explore Overview',
@@ -109,26 +136,51 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
       onClick: () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
+      textColorClass: 'text-rose-300',
+      borderColorClass: 'border-rose-500/50',
+      dotColorClass: 'bg-rose-400',
+      shadowClass: 'shadow-rose-950/60',
+      hoverBorderClass: 'hover:border-rose-500/60 hover:bg-rose-500/10 text-zinc-300 hover:text-rose-300',
     },
     {
       title: 'REST API Docs',
       icon: <FileCode2 className="w-4 h-4 text-sky-400" />,
       onClick: () => onNavigate('/docs/api/login-routes'),
+      textColorClass: 'text-sky-300',
+      borderColorClass: 'border-sky-500/50',
+      dotColorClass: 'bg-sky-400',
+      shadowClass: 'shadow-sky-950/60',
+      hoverBorderClass: 'hover:border-sky-500/60 hover:bg-sky-500/10 text-zinc-300 hover:text-sky-300',
     },
     {
       title: 'Python SDK Docs',
       icon: <BookOpen className="w-4 h-4 text-purple-400" />,
       onClick: () => onNavigate('/docs/lib/setup'),
+      textColorClass: 'text-purple-300',
+      borderColorClass: 'border-purple-500/50',
+      dotColorClass: 'bg-purple-400',
+      shadowClass: 'shadow-purple-950/60',
+      hoverBorderClass: 'hover:border-purple-500/60 hover:bg-purple-500/10 text-zinc-300 hover:text-purple-300',
     },
     {
       title: 'Configure Server URL',
       icon: <Server className="w-4 h-4 text-emerald-400" />,
       onClick: handleOpenConfig,
+      textColorClass: 'text-emerald-300',
+      borderColorClass: 'border-emerald-500/50',
+      dotColorClass: 'bg-emerald-400',
+      shadowClass: 'shadow-emerald-950/60',
+      hoverBorderClass: 'hover:border-emerald-500/60 hover:bg-emerald-500/10 text-zinc-300 hover:text-emerald-300',
     },
     {
       title: 'Sign In to Console',
       icon: <LogIn className="w-4 h-4 text-indigo-400" />,
       onClick: () => onNavigate('/login'),
+      textColorClass: 'text-indigo-300',
+      borderColorClass: 'border-indigo-500/50',
+      dotColorClass: 'bg-indigo-400',
+      shadowClass: 'shadow-indigo-950/60',
+      hoverBorderClass: 'hover:border-indigo-500/60 hover:bg-indigo-500/10 text-zinc-300 hover:text-indigo-300',
     },
   ];
 
@@ -151,6 +203,12 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
               icon={item.icon}
               onClick={item.onClick}
               badge={item.badge}
+              active={item.active}
+              textColorClass={item.textColorClass}
+              borderColorClass={item.borderColorClass}
+              dotColorClass={item.dotColorClass}
+              shadowClass={item.shadowClass}
+              hoverBorderClass={item.hoverBorderClass}
             />
           ))}
         </motion.div>
