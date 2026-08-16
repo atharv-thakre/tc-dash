@@ -38,8 +38,8 @@ const DockIcon: React.FC<DockItemProps> = ({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-110, 0, 110], [42, 58, 42]);
-  const width = useSpring(widthSync, { mass: 0.05, stiffness: 650, damping: 26 });
+  const widthSync = useTransform(distance, [-120, 0, 120], [42, 58, 42]);
+  const width = useSpring(widthSync, { mass: 0.08, stiffness: 420, damping: 24 });
 
   return (
     <div className="relative">

@@ -123,6 +123,22 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginPassword({
+          identifier: 'admin@tcauth.dev',
+          password: 'password123',
+        });
+        toast.success('Signed in as SuperAdmin in Demo Mode');
+        onNavigate('/dashboard');
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Failed to sign in as demo superadmin'));
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
     if (!otpEmail) {
       toast.error('Please enter your email address');
       return;
@@ -141,6 +157,22 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginPassword({
+          identifier: 'admin@tcauth.dev',
+          password: 'password123',
+        });
+        toast.success('Signed in as SuperAdmin in Demo Mode');
+        onNavigate('/dashboard');
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Failed to sign in as demo superadmin'));
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
     if (!otpCode) {
       toast.error('Please enter the OTP code');
       return;
@@ -159,6 +191,22 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
   const handleRequestResetOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginPassword({
+          identifier: 'admin@tcauth.dev',
+          password: 'password123',
+        });
+        toast.success('Signed in as SuperAdmin in Demo Mode');
+        onNavigate('/dashboard');
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Failed to sign in as demo superadmin'));
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
     if (!forgotEmail) {
       toast.error('Please enter your email address');
       return;
@@ -177,6 +225,22 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginPassword({
+          identifier: 'admin@tcauth.dev',
+          password: 'password123',
+        });
+        toast.success('Signed in as SuperAdmin in Demo Mode');
+        onNavigate('/dashboard');
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Failed to sign in as demo superadmin'));
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
     if (!forgotOtp) {
       toast.error('Please enter the reset code');
       return;
@@ -542,7 +606,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                 {isActive && (
                   <motion.div
                     layoutId="activeLoginTab"
-                    transition={{ type: 'spring', stiffness: 600, damping: 32 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     className="absolute inset-0 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-xs -z-10"
                   />
                 )}
@@ -560,7 +624,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <form onSubmit={handlePasswordFormSubmit} className="space-y-4">
                 <FormField label="Email or Handle" error={passwordErrors.identifier?.message} required>
@@ -627,7 +691,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-4"
             >
               {!otpSent ? (
@@ -664,7 +728,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                         {apiMode === 'demo' ? (
                           <>
                             <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
-                            <span>Request OTP Code</span>
+                            <span>Sign In as SuperAdmin</span>
                             <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
                           </>
                         ) : (
@@ -738,7 +802,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                     ) : (
                       <>
                         {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
-                        <span>Verify & Sign In</span>
+                        <span>Sign In as SuperAdmin</span>
                         <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
                       </>
                     )}
@@ -754,7 +818,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-4"
             >
               {/* Clean ReactBits header badge */}
@@ -799,7 +863,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                         {apiMode === 'demo' ? (
                           <>
                             <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
-                            <span>Send Reset Code</span>
+                            <span>Sign In as SuperAdmin</span>
                             <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
                           </>
                         ) : (
@@ -873,7 +937,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                     ) : (
                       <>
                         {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
-                        <span>Verify & Reset Password</span>
+                        <span>Sign In as SuperAdmin</span>
                         <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
                       </>
                     )}
