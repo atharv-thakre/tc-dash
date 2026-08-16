@@ -5,12 +5,13 @@ import { getDemoAccounts, saveDemoAccounts } from './auth';
 export const profileService = {
   // GET /me
   async getMe(): Promise<MeResponse> {
+    const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
     if (getStoredApiMode() === 'demo') {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const token = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
       const accounts = getDemoAccounts();
 
       let matchedAccount = accounts[0]; // Default to superadmin for demo token

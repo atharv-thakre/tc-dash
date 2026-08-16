@@ -72,7 +72,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAccount(null);
     setSession(null);
     setPayload(null);
-    if (window.location.pathname !== '/login') {
+    const path = window.location.pathname;
+    if (path === '/' || path === '/landing' || path.startsWith('/docs') || path === '/signup') {
+      return;
+    }
+    if (path !== '/login') {
       window.history.pushState({}, '', '/login');
       window.dispatchEvent(new Event('popstate'));
     }

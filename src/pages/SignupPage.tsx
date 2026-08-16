@@ -2,8 +2,20 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, ArrowRight, Lock, Mail, Send, User, UserPlus } from 'lucide-react';
-import { motion } from 'motion/react';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  KeyRound,
+  Lock,
+  Mail,
+  Send,
+  Sparkles,
+  User,
+  UserPlus,
+  Zap,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useApiConfig } from '../contexts/ApiConfigContext';
@@ -11,6 +23,9 @@ import { authService } from '../services/auth';
 import { FormField } from '../components/common/FormField';
 import { ProviderButton } from '../components/common/ProviderButton';
 import { BorderBeam } from '../components/reactbits/BorderBeam';
+import { ParticlesBackground } from '../components/reactbits/ParticlesBackground';
+import { ShinyText } from '../components/reactbits/ShinyText';
+import { DecryptedText } from '../components/reactbits/DecryptedText';
 import { getErrorMessage } from '../services/apiClient';
 
 const signupSchema = z.object({
@@ -141,27 +156,41 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="min-h-[85vh] flex flex-col items-center justify-center p-4 py-8"
+      className="min-h-[85vh] flex flex-col items-center justify-center p-4 py-8 relative"
     >
+      {/* Subtle particle effect */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <ParticlesBackground particleCount={25} particleColor="rgba(99, 102, 241, 0.25)" speed={0.3} />
+      </div>
+
       {/* Back to Landing Page Link */}
       <button
         onClick={() => onNavigate('/')}
-        className="mb-4 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl hover:bg-zinc-900 border border-transparent hover:border-zinc-800"
+        className="mb-4 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl hover:bg-zinc-900 border border-transparent hover:border-zinc-800 relative z-10"
       >
         <ArrowRight className="w-3.5 h-3.5 rotate-180" />
         <span>Back to Product Overview</span>
       </button>
 
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all relative overflow-hidden">
-        <BorderBeam size={220} duration={12} colorFrom="#6366f1" colorTo="#a855f7" />
+      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all relative overflow-hidden z-10">
+        <BorderBeam
+          size={240}
+          duration={apiMode === 'demo' ? 8 : 12}
+          colorFrom={apiMode === 'demo' ? '#f59e0b' : '#6366f1'}
+          colorTo={apiMode === 'demo' ? '#fbbf24' : '#a855f7'}
+        />
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 mb-3 shadow-inner">
-            <UserPlus className="w-6 h-6" />
+          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl border mb-3 shadow-inner transition-colors ${
+            apiMode === 'demo'
+              ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+              : 'bg-zinc-800/80 border-zinc-700/60 text-indigo-400'
+          }`}>
+            {apiMode === 'demo' ? <Zap className="w-6 h-6 fill-amber-400/20 text-amber-400" /> : <UserPlus className="w-6 h-6" />}
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white">Create Account</h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Register your account on tc-auth
+            Register your developer account on tc-auth
           </p>
         </div>
 
@@ -177,183 +206,267 @@ export const SignupPage: React.FC<{ onNavigate: (path: string) => void }> = ({ o
           </div>
           <div className="relative flex justify-center text-[11px] uppercase">
             <span className="bg-zinc-900 px-3 text-zinc-500 font-bold tracking-wider">
-              or register with details
+              or register with credentials
             </span>
           </div>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="flex p-1 mb-5 rounded-2xl bg-zinc-950 border border-zinc-800">
-          <button
-            type="button"
-            onClick={() => setTab('password')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'password'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('otp')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'otp'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            OTP Verification
-          </button>
+        {/* Tab Switcher */}
+        <div className="relative flex p-1 mb-5 rounded-2xl bg-zinc-950 border border-zinc-800/80">
+          {(['password', 'otp'] as const).map((t) => {
+            const isActive = tab === t;
+            const label = t === 'password' ? 'Password Signup' : 'OTP Verification';
+            const Icon = t === 'password' ? KeyRound : Mail;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`relative flex-1 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 z-10 select-none ${
+                  isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeSignupTab"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    className="absolute inset-0 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-xs -z-10"
+                  />
+                )}
+                <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? (apiMode === 'demo' ? 'text-amber-400' : 'text-indigo-400') : 'text-zinc-500'}`} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {tab === 'password' ? (
-          <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-3.5">
-            <FormField label="Full Name" error={errors.name?.message} required>
-              <div className="relative">
-                <User className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
-                <input
-                  type="text"
-                  placeholder="Atharv Thakre"
-                  {...register('name')}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-            </FormField>
-
-            <FormField label="Handle / Username" error={errors.handle?.message} required>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-sm font-mono text-zinc-500">@</span>
-                <input
-                  type="text"
-                  placeholder="atharvthakre"
-                  {...register('handle')}
-                  className="w-full pl-8 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50 font-mono text-xs"
-                />
-              </div>
-            </FormField>
-
-            <FormField label="Email Address" error={errors.email?.message} required>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
-                <input
-                  type="email"
-                  placeholder="admin@tcauth.dev"
-                  {...register('email')}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-            </FormField>
-
-            <FormField label="Password" error={errors.password?.message} required>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
-                <input
-                  type="password"
-                  placeholder="At least 6 characters"
-                  {...register('password')}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-            </FormField>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer"
+        <AnimatePresence mode="wait">
+          {tab === 'password' && (
+            <motion.div
+              key="password"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
-              {isLoading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-3.5">
-            <FormField label="Full Name">
-              <input
-                type="text"
-                placeholder="Jane Doe"
-                {...register('name')}
-                className="w-full px-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white"
-              />
-            </FormField>
+              <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-3.5">
+                <FormField label="Full Name" error={errors.name?.message} required>
+                  <div className="relative">
+                    <User className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      placeholder="Atharv Thakre"
+                      {...register('name')}
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                </FormField>
 
-            <FormField label="Handle">
-              <input
-                type="text"
-                placeholder="janedoe"
-                {...register('handle')}
-                className="w-full px-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white font-mono text-xs"
-              />
-            </FormField>
+                <FormField label="Handle / Username" error={errors.handle?.message} required>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-sm font-mono text-zinc-500">@</span>
+                    <input
+                      type="text"
+                      placeholder="atharvthakre"
+                      {...register('handle')}
+                      className="w-full pl-8 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50 font-mono text-xs"
+                    />
+                  </div>
+                </FormField>
 
-            <FormField label="Email">
-              <input
-                type="email"
-                placeholder="jane@example.com"
-                {...register('email')}
-                className="w-full px-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white"
-              />
-            </FormField>
+                <FormField label="Email Address" error={errors.email?.message} required>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="email"
+                      placeholder="admin@tcauth.dev"
+                      {...register('email')}
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                </FormField>
 
-            <FormField label="Password">
-              <input
-                type="password"
-                placeholder="••••••••"
-                {...register('password')}
-                className="w-full px-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white"
-              />
-            </FormField>
-
-            {!otpSent ? (
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={isSendingOtp}
-                className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
-              >
-                {isSendingOtp ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Request Signup OTP
-                  </>
-                )}
-              </button>
-            ) : (
-              <form onSubmit={handleVerifyAndSignupOtp} className="space-y-3">
-                <FormField label="Enter Verification Code">
-                  <input
-                    type="text"
-                    value={otpCode || ''}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="Enter 6-digit code"
-                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
-                  />
+                <FormField label="Password" error={errors.password?.message} required>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="password"
+                      placeholder="At least 6 characters"
+                      {...register('password')}
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
                 </FormField>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer overflow-hidden group select-none ${
+                    apiMode === 'demo'
+                      ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                      : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                  }`}
                 >
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
                   {isLoading ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
                   ) : (
-                    'Verify & Create Account'
+                    <>
+                      {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
+                      <span>Create Account</span>
+                      <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
+                    </>
                   )}
                 </button>
               </form>
-            )}
-          </div>
-        )}
+            </motion.div>
+          )}
+
+          {tab === 'otp' && (
+            <motion.div
+              key="otp"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="space-y-3.5"
+            >
+              <FormField label="Full Name" required>
+                <div className="relative">
+                  <User className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    placeholder="Atharv Thakre"
+                    {...register('name')}
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+              </FormField>
+
+              <FormField label="Handle / Username" required>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-sm font-mono text-zinc-500">@</span>
+                  <input
+                    type="text"
+                    placeholder="atharvthakre"
+                    {...register('handle')}
+                    className="w-full pl-8 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50 font-mono text-xs"
+                  />
+                </div>
+              </FormField>
+
+              <FormField label="Email Address" required>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="email"
+                    placeholder="admin@tcauth.dev"
+                    {...register('email')}
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+              </FormField>
+
+              <FormField label="Password" required>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    {...register('password')}
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+              </FormField>
+
+              {!otpSent ? (
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isSendingOtp}
+                  className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer overflow-hidden group select-none ${
+                    apiMode === 'demo'
+                      ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                      : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                  }`}
+                >
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                  {isSendingOtp ? (
+                    <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                  ) : (
+                    <>
+                      {apiMode === 'demo' ? (
+                        <>
+                          <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                          <span>Request Signup OTP</span>
+                          <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Request Signup OTP</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
+                    </>
+                  )}
+                </button>
+              ) : (
+                <form onSubmit={handleVerifyAndSignupOtp} className="space-y-3">
+                  <FormField label="Enter Verification Code" required hint="Enter the 6-digit verification code.">
+                    <input
+                      type="text"
+                      value={otpCode || ''}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </FormField>
+
+                  {apiMode === 'demo' && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        Demo Mode: Any code works
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode('123456')}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                      >
+                        Fill Code (123456)
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden group select-none ${
+                      apiMode === 'demo'
+                        ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                        : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                    }`}
+                  >
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                    {isLoading ? (
+                      <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                    ) : (
+                      <>
+                        {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
+                        <span>Verify & Create Account</span>
+                        <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-400">
           Already have an account?{' '}

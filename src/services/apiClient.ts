@@ -70,7 +70,7 @@ export function deleteCustomPreset(id: string): void {
 export function getStoredApiMode(): ApiMode {
   const stored = localStorage.getItem(LOCAL_STORAGE_API_MODE_KEY);
   if (stored === 'live' || stored === 'demo') return stored;
-  return 'demo'; // default to demo/mock so preview works instantly
+  return 'live'; // Default to live server mode
 }
 
 export function setStoredApiMode(mode: ApiMode) {

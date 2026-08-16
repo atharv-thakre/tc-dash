@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Activity,
   AlertCircle,
@@ -13,12 +14,14 @@ import {
   Lock,
   Mail,
   Plus,
+  RotateCcw,
   Send,
   Server,
   Settings2,
-  Sparkles,
   Trash2,
   Zap,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,7 +34,7 @@ import { getErrorMessage } from '../services/apiClient';
 import { BorderBeam } from '../components/reactbits/BorderBeam';
 import { DecryptedText } from '../components/reactbits/DecryptedText';
 import { ParticlesBackground } from '../components/reactbits/ParticlesBackground';
-import { Magnet } from '../components/reactbits/Magnet';
+import { ShinyText } from '../components/reactbits/ShinyText';
 
 const passwordSchema = z.object({
   identifier: z.string().min(1, 'Email or handle is required'),
@@ -97,6 +100,27 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
     }
   };
 
+  const handlePasswordFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (apiMode === 'demo') {
+      setIsLoading(true);
+      try {
+        await loginPassword({
+          identifier: 'admin@tcauth.dev',
+          password: 'password123',
+        });
+        toast.success('Signed in as SuperAdmin in Demo Mode');
+        onNavigate('/dashboard');
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Failed to sign in as demo superadmin'));
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+    handleSubmitPassword(onSubmitPassword)(e);
+  };
+
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otpEmail) {
@@ -143,9 +167,9 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
     try {
       await authService.sendEmailOTP('reset', { email: forgotEmail });
       setResetSent(true);
-      toast.success('Reset OTP sent to email (purpose="reset").');
+      toast.success('Password reset code sent to your email.');
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Failed to send reset OTP.'));
+      toast.error(getErrorMessage(err, 'Failed to send reset code.'));
     } finally {
       setIsSendingReset(false);
     }
@@ -154,16 +178,16 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotOtp) {
-      toast.error('Please enter the reset OTP code');
+      toast.error('Please enter the reset code');
       return;
     }
     setIsLoading(true);
     try {
       await forgotPassword({ email: forgotEmail, otp: forgotOtp });
-      toast.success('Password reset & logged in successfully via POST /forgot/password');
+      toast.success('Password verified & signed in successfully.');
       onNavigate('/dashboard');
     } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Failed to reset password. Check OTP code.'));
+      toast.error(getErrorMessage(err, 'Failed to reset password. Check verification code.'));
     } finally {
       setIsLoading(false);
     }
@@ -182,20 +206,6 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       setPulseError(msg);
     } finally {
       setIsTestingPulse(false);
-    }
-  };
-
-  const handleQuickDemoLogin = async () => {
-    setIsLoading(true);
-    try {
-      setApiMode('demo');
-      await loginPassword({ identifier: 'admin@tcauth.dev', password: 'demo' });
-      toast.success('Entered Demo Mode as Superadmin (Atharv Thakre)');
-      onNavigate('/dashboard');
-    } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Failed to enter demo mode'));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -221,12 +231,21 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
       </button>
 
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 transition-all relative overflow-hidden z-10">
-        <BorderBeam size={220} duration={12} colorFrom="#6366f1" colorTo="#a855f7" />
+        <BorderBeam
+          size={240}
+          duration={apiMode === 'demo' ? 8 : 12}
+          colorFrom={apiMode === 'demo' ? '#f59e0b' : '#6366f1'}
+          colorTo={apiMode === 'demo' ? '#fbbf24' : '#a855f7'}
+        />
 
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 mb-3 shadow-inner">
-            <KeyRound className="w-6 h-6" />
+          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl border mb-3 shadow-inner transition-colors ${
+            apiMode === 'demo'
+              ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+              : 'bg-zinc-800/80 border-zinc-700/60 text-indigo-400'
+          }`}>
+            {apiMode === 'demo' ? <Zap className="w-6 h-6 fill-amber-400/20 text-amber-400" /> : <KeyRound className="w-6 h-6" />}
           </div>
           <div className="flex items-center justify-center gap-2">
             <h1 className="text-2xl font-black tracking-tight text-white">tc-auth</h1>
@@ -252,9 +271,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors cursor-pointer"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              {showServerSettings
-                ? apiMode === 'demo' ? 'Hide Access' : 'Hide URL'
-                : apiMode === 'demo' ? 'Configure Access' : 'Configure URL'}
+              {showServerSettings ? 'Hide URL Config' : 'Configure URL'}
             </button>
           </div>
 
@@ -265,7 +282,7 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               onClick={() => setApiMode('demo')}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 apiMode === 'demo'
-                  ? 'border-indigo-500/80 bg-indigo-500/10 text-indigo-300 ring-1 ring-indigo-500/30'
+                  ? 'border-amber-500/80 bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/30'
                   : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
               }`}
             >
@@ -338,184 +355,154 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
             </div>
           )}
 
-          {/* Lower Toggleable Section: Demo Instant Access OR Live Backend Base URL */}
+          {/* Lower Toggleable Section: Live Backend Base URL */}
           {showServerSettings && (
             <div className="pt-3 border-t border-zinc-800/80 space-y-2.5 animate-in fade-in duration-150">
-              {apiMode === 'demo' ? (
-                /* Demo Mode Instant Access Section */
-                <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2.5 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                      Demo Mode Active
-                    </span>
-                    <span className="text-[10px] font-semibold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20 uppercase tracking-wider">
-                      Instant Access
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    Signed out or testing? Jump straight back into full Superadmin control panel.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoLogin}
-                    disabled={isLoading}
-                    className="w-full py-2.5 px-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer border border-zinc-700/80 shadow-sm active:scale-[0.99] disabled:opacity-50"
-                  >
-                    <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    Enter as SuperAdmin
-                  </button>
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  BACKEND BASE URL PATH
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingPreset(!isAddingPreset)}
+                  className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                >
+                  <BookmarkPlus className="w-3 h-3" />
+                  <span>{isAddingPreset ? 'Close' : '+ Save Preset'}</span>
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={inputUrl || ''}
+                    onChange={(e) => setInputUrl(e.target.value)}
+                    placeholder="https://api.codesena.me/tc-auth or /tc-auth"
+                    className="w-full pl-8 pr-2 py-1.5 text-xs bg-zinc-900 border border-zinc-700/80 rounded-xl text-zinc-100 font-mono focus:ring-2 focus:ring-indigo-500/50"
+                  />
                 </div>
-              ) : (
-                /* Live Server Mode Base URL Settings */
-                <>
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                      BACKEND BASE URL PATH
-                    </label>
+                <button
+                  type="button"
+                  onClick={handleSaveUrl}
+                  className="px-3.5 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
+                >
+                  Set
+                </button>
+              </div>
+
+              {/* Add Custom Preset Inline Form */}
+              {isAddingPreset && (
+                <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-indigo-500/30 space-y-2">
+                  <div className="text-[10px] font-semibold text-indigo-300 flex items-center gap-1">
+                    <Plus className="w-3 h-3" />
+                    <span>Save Current URL to Local Presets</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={newPresetName}
+                      onChange={(e) => setNewPresetName(e.target.value)}
+                      placeholder="Preset name (e.g. My Server)"
+                      className="flex-1 px-2 py-1 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                    />
                     <button
                       type="button"
-                      onClick={() => setIsAddingPreset(!isAddingPreset)}
-                      className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                      onClick={() => {
+                        if (!inputUrl.trim()) {
+                          toast.error('Enter a URL first');
+                          return;
+                        }
+                        const name = newPresetName.trim() || inputUrl.trim();
+                        addPreset(name, inputUrl.trim());
+                        toast.success(`Saved preset "${name}" locally`);
+                        setIsAddingPreset(false);
+                        setNewPresetName('');
+                      }}
+                      className="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer shrink-0"
                     >
-                      <BookmarkPlus className="w-3 h-3" />
-                      <span>{isAddingPreset ? 'Close' : '+ Save Preset'}</span>
+                      Save
                     </button>
                   </div>
+                </div>
+              )}
 
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Globe className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
-                      <input
-                        type="text"
-                        value={inputUrl || ''}
-                        onChange={(e) => setInputUrl(e.target.value)}
-                        placeholder="https://api.codesena.me/tc-auth or /tc-auth"
-                        className="w-full pl-8 pr-2 py-1.5 text-xs bg-zinc-900 border border-zinc-700/80 rounded-xl text-zinc-100 font-mono focus:ring-2 focus:ring-indigo-500/50"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveUrl}
-                      className="px-3.5 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
-                    >
-                      Set
-                    </button>
-                  </div>
+              {/* Quick Presets */}
+              <div className="space-y-1.5 pt-0.5">
+                <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                  <span className="text-zinc-500 font-medium">Presets:</span>
+                  <span className="text-[9px] text-zinc-600 font-mono">Stored Locally</span>
+                </div>
 
-                  {/* Add Custom Preset Inline Form */}
-                  {isAddingPreset && (
-                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-indigo-500/30 space-y-2">
-                      <div className="text-[10px] font-semibold text-indigo-300 flex items-center gap-1">
-                        <Plus className="w-3 h-3" />
-                        <span>Save Current URL to Local Presets</span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="text"
-                          value={newPresetName}
-                          onChange={(e) => setNewPresetName(e.target.value)}
-                          placeholder="Preset name (e.g. My Server)"
-                          className="flex-1 px-2 py-1 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
-                        />
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {/* Builtin Presets */}
+                  {builtinPresets.map((p) => {
+                    const isSelected = baseUrl === p.url;
+                    const isDefault = p.id === 'codesena-live';
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setInputUrl(p.url);
+                          setBaseUrl(p.url);
+                          toast.success(`Set base URL to ${p.url}`);
+                        }}
+                        className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
+                            : isDefault
+                            ? 'bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-300 border-indigo-800/60 font-semibold'
+                            : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
+                        }`}
+                      >
+                        <span>{p.url}</span>
+                        {isDefault && (
+                          <span className="px-1 py-0.2 rounded bg-indigo-500/30 text-indigo-300 text-[8px] uppercase font-bold tracking-wider">
+                            Default
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Presets */}
+                  {customPresets.map((p) => {
+                    const isSelected = baseUrl === p.url;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setInputUrl(p.url);
+                          setBaseUrl(p.url);
+                          toast.success(`Set base URL to ${p.url}`);
+                        }}
+                        className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+                          isSelected
+                            ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
+                            : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
+                        }`}
+                      >
+                        <span className="text-zinc-400 font-sans font-medium text-[10px]">{p.name}:</span>
+                        <span className="truncate max-w-[130px]">{p.url}</span>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (!inputUrl.trim()) {
-                              toast.error('Enter a URL first');
-                              return;
-                            }
-                            const name = newPresetName.trim() || inputUrl.trim();
-                            addPreset(name, inputUrl.trim());
-                            toast.success(`Saved preset "${name}" locally`);
-                            setIsAddingPreset(false);
-                            setNewPresetName('');
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePreset(p.id);
+                            toast.success(`Removed preset "${p.name}"`);
                           }}
-                          className="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Delete preset"
+                          className="p-0.5 text-zinc-500 hover:text-rose-400 transition-colors"
                         >
-                          Save
+                          <Trash2 className="w-2.5 h-2.5" />
                         </button>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Quick Presets */}
-                  <div className="space-y-1.5 pt-0.5">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                      <span className="text-zinc-500 font-medium">Presets:</span>
-                      <span className="text-[9px] text-zinc-600 font-mono">Stored Locally</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 items-center">
-                      {/* Builtin Presets */}
-                      {builtinPresets.map((p) => {
-                        const isSelected = baseUrl === p.url;
-                        const isDefault = p.id === 'codesena-live';
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setInputUrl(p.url);
-                              setBaseUrl(p.url);
-                              toast.success(`Set base URL to ${p.url}`);
-                            }}
-                            className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 ${
-                              isSelected
-                                ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
-                                : isDefault
-                                ? 'bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-300 border-indigo-800/60 font-semibold'
-                                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
-                            }`}
-                          >
-                            <span>{p.url}</span>
-                            {isDefault && (
-                              <span className="px-1 py-0.2 rounded bg-indigo-500/30 text-indigo-300 text-[8px] uppercase font-bold tracking-wider">
-                                Default
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-
-                      {/* Custom Presets */}
-                      {customPresets.map((p) => {
-                        const isSelected = baseUrl === p.url;
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => {
-                              setInputUrl(p.url);
-                              setBaseUrl(p.url);
-                              toast.success(`Set base URL to ${p.url}`);
-                            }}
-                            className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
-                              isSelected
-                                ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
-                                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
-                            }`}
-                          >
-                            <span className="text-zinc-400 font-sans font-medium text-[10px]">{p.name}:</span>
-                            <span className="truncate max-w-[130px]">{p.url}</span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removePreset(p.id);
-                                toast.success(`Removed preset "${p.name}"`);
-                              }}
-                              title="Delete preset"
-                              className="p-0.5 text-zinc-500 hover:text-rose-400 transition-colors"
-                            >
-                              <Trash2 className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -538,98 +525,63 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
         </div>
 
         {/* Tab Switcher: Password vs OTP vs Reset */}
-        <div className="flex p-1 mb-5 rounded-2xl bg-zinc-950 border border-zinc-800">
-          <button
-            type="button"
-            onClick={() => setTab('password')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'password'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('otp')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'otp'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Email OTP
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('reset')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-              tab === 'reset'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/50'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Reset
-          </button>
+        <div className="relative flex p-1 mb-5 rounded-2xl bg-zinc-950 border border-zinc-800/80">
+          {(['password', 'otp', 'reset'] as const).map((t) => {
+            const isActive = tab === t;
+            const label = t === 'password' ? 'Password' : t === 'otp' ? 'Email OTP' : 'Reset';
+            const Icon = t === 'password' ? KeyRound : t === 'otp' ? Mail : RotateCcw;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`relative flex-1 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 z-10 select-none ${
+                  isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeLoginTab"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    className="absolute inset-0 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-xs -z-10"
+                  />
+                )}
+                <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? (apiMode === 'demo' ? 'text-amber-400' : 'text-indigo-400') : 'text-zinc-500'}`} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Password Login Form */}
-        {tab === 'password' ? (
-          <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
-            <FormField label="Email or Handle" error={passwordErrors.identifier?.message} required>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
-                <input
-                  type="text"
-                  placeholder="admin@tcauth.dev or atharv"
-                  {...registerPassword('identifier')}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-            </FormField>
-
-            <FormField label="Password" error={passwordErrors.password?.message} required>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  {...registerPassword('password')}
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-            </FormField>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
+        <AnimatePresence mode="wait">
+          {tab === 'password' && (
+            <motion.div
+              key="password"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
-              {isLoading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  Sign In to Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        ) : tab === 'otp' ? (
-          /* OTP Login Form */
-          <div className="space-y-4">
-            {!otpSent ? (
-              <form onSubmit={handleRequestOtp} className="space-y-4">
-                <FormField label="Email Address" required hint="We will email a temporary OTP login code.">
+              <form onSubmit={handlePasswordFormSubmit} className="space-y-4">
+                <FormField label="Email or Handle" error={passwordErrors.identifier?.message} required>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
                     <input
-                      type="email"
-                      value={otpEmail || ''}
-                      onChange={(e) => setOtpEmail(e.target.value)}
-                      placeholder="admin@tcauth.dev"
-                      required
+                      type="text"
+                      placeholder="admin@tcauth.dev or atharv"
+                      {...registerPassword('identifier')}
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </div>
+                </FormField>
+
+                <FormField label="Password" error={passwordErrors.password?.message} required>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      {...registerPassword('password')}
                       className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
@@ -637,155 +589,300 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
 
                 <button
                   type="submit"
-                  disabled={isSendingOtp}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isLoading}
+                  className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
+                    apiMode === 'demo'
+                      ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                      : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                  }`}
                 >
-                  {isSendingOtp ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                  {isLoading ? (
+                    <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      Request Email OTP
+                      {apiMode === 'demo' ? (
+                        <>
+                          <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                          <span>Sign In as SuperAdmin</span>
+                          <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          <span>Sign In to Dashboard</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
                     </>
                   )}
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
-                  <span>Code sent to <strong className="text-white">{otpEmail}</strong></span>
+            </motion.div>
+          )}
+
+          {tab === 'otp' && (
+            <motion.div
+              key="otp"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="space-y-4"
+            >
+              {!otpSent ? (
+                <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <FormField label="Email Address" required hint="Enter your email to receive a one-time sign-in code.">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                      <input
+                        type="email"
+                        value={otpEmail || ''}
+                        onChange={(e) => setOtpEmail(e.target.value)}
+                        placeholder="admin@tcauth.dev"
+                        required
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+                  </FormField>
+
                   <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="underline text-[11px] font-semibold hover:text-white"
+                    type="submit"
+                    disabled={isSendingOtp}
+                    className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
+                      apiMode === 'demo'
+                        ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                        : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                    }`}
                   >
-                    Change
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                    {isSendingOtp ? (
+                      <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                    ) : (
+                      <>
+                        {apiMode === 'demo' ? (
+                          <>
+                            <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                            <span>Request OTP Code</span>
+                            <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>Send Sign-In OTP</span>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                          </>
+                        )}
+                      </>
+                    )}
                   </button>
-                </div>
-
-                <FormField label="Enter Verification Code" required>
-                  <input
-                    type="text"
-                    value={otpCode || ''}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="Enter 6-digit code"
-                    required
-                    maxLength={12}
-                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
-                  />
-                </FormField>
-
-                {apiMode === 'demo' && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
-                    <span>Demo Mode: Any code works</span>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                      Code sent to <strong className="text-white">{otpEmail}</strong>
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setOtpCode('123456')}
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                      onClick={() => setOtpSent(false)}
+                      className="underline text-[11px] font-semibold text-zinc-400 hover:text-white cursor-pointer"
                     >
-                      Fill Demo Code (123456)
+                      Change
                     </button>
                   </div>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isLoading ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    'Verify & Sign In'
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-        ) : (
-          /* Forgot Password / Reset OTP Form */
-          <div className="space-y-4">
-            {!resetSent ? (
-              <form onSubmit={handleRequestResetOtp} className="space-y-4">
-                <FormField label="Email Address" required hint="We will send a password reset OTP (purpose='reset').">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                  <FormField label="Enter Verification Code" required hint="Enter the 6-digit code sent to your inbox.">
                     <input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
+                      type="text"
+                      value={otpCode || ''}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="Enter 6-digit code"
                       required
-                      className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                      maxLength={12}
+                      className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
                     />
-                  </div>
-                </FormField>
+                  </FormField>
 
-                <button
-                  type="submit"
-                  disabled={isSendingReset}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isSendingReset ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    'Send Reset OTP (`purpose=reset`)'
+                  {apiMode === 'demo' && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        Demo Mode: Any 6-digit code works
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode('123456')}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                      >
+                        Fill Code (123456)
+                      </button>
+                    </div>
                   )}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
-                  <span>Reset OTP sent to <strong className="text-white">{forgotEmail}</strong></span>
+
                   <button
-                    type="button"
-                    onClick={() => setResetSent(false)}
-                    className="underline text-[11px] font-semibold hover:text-white"
+                    type="submit"
+                    disabled={isLoading}
+                    className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
+                      apiMode === 'demo'
+                        ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                        : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                    }`}
                   >
-                    Change
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                    {isLoading ? (
+                      <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                    ) : (
+                      <>
+                        {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
+                        <span>Verify & Sign In</span>
+                        <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
+                      </>
+                    )}
                   </button>
-                </div>
+                </form>
+              )}
+            </motion.div>
+          )}
 
-                <FormField label="Enter Reset Code" required hint="Code for POST /forgot/password">
-                  <input
-                    type="text"
-                    value={forgotOtp}
-                    onChange={(e) => setForgotOtp(e.target.value)}
-                    placeholder="Enter 6-digit code"
-                    required
-                    maxLength={12}
-                    className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
-                  />
-                </FormField>
+          {tab === 'reset' && (
+            <motion.div
+              key="reset"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="space-y-4"
+            >
+              {/* Clean ReactBits header badge */}
+              <div className="flex items-center justify-between pb-1 border-b border-zinc-800/60">
+                <ShinyText text="Password Recovery" speed={3} className="text-xs font-semibold text-zinc-300" />
+                <span className="text-[10px] font-medium text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded-full border border-zinc-800">
+                  Self-Service
+                </span>
+              </div>
 
-                {apiMode === 'demo' && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
-                    <span>Demo Mode: Any code works</span>
+              {!resetSent ? (
+                <form onSubmit={handleRequestResetOtp} className="space-y-4">
+                  <FormField label="Registered Email" required hint="Enter your account email to receive a recovery code.">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                      <input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        required
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+                  </FormField>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingReset}
+                    className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
+                      apiMode === 'demo'
+                        ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                        : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                    }`}
+                  >
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                    {isSendingReset ? (
+                      <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                    ) : (
+                      <>
+                        {apiMode === 'demo' ? (
+                          <>
+                            <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                            <span>Send Reset Code</span>
+                            <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>Send Reset Code</span>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                      Reset code sent to <strong className="text-white">{forgotEmail}</strong>
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setForgotOtp('123456')}
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                      onClick={() => setResetSent(false)}
+                      className="underline text-[11px] font-semibold text-zinc-400 hover:text-white cursor-pointer"
                     >
-                      Fill Demo Code (123456)
+                      Change
                     </button>
                   </div>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 px-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isLoading ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    'Reset & Sign In (`POST /forgot/password`)'
+                  <FormField label="Enter Verification Code" required hint="Enter the 6-digit code sent to your inbox.">
+                    <input
+                      type="text"
+                      value={forgotOtp}
+                      onChange={(e) => setForgotOtp(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      required
+                      maxLength={12}
+                      className="w-full text-center tracking-[0.25em] font-mono text-base py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-indigo-200 placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-600 placeholder:text-xs focus:ring-2 focus:ring-indigo-500/50"
+                    />
+                  </FormField>
+
+                  {apiMode === 'demo' && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        Demo Mode: Any 6-digit code works
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setForgotOtp('123456')}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-[10px] border border-amber-500/30 transition-all cursor-pointer"
+                      >
+                        Fill Code (123456)
+                      </button>
+                    </div>
                   )}
-                </button>
-              </form>
-            )}
-          </div>
-        )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`relative w-full py-3 px-4 text-sm font-bold rounded-xl disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer overflow-hidden group select-none ${
+                      apiMode === 'demo'
+                        ? 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 border border-amber-300/60 font-black'
+                        : 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 border border-indigo-500/30'
+                    }`}
+                  >
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                    {isLoading ? (
+                      <span className={`w-4 h-4 border-2 ${apiMode === 'demo' ? 'border-zinc-950' : 'border-white'} border-t-transparent rounded-full animate-spin`} />
+                    ) : (
+                      <>
+                        {apiMode === 'demo' && <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />}
+                        <span>Verify & Reset Password</span>
+                        <ArrowRight className={`w-4 h-4 group-hover:translate-x-0.5 transition-transform ${apiMode === 'demo' ? 'text-zinc-950' : ''}`} />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-400">
           Don't have an account?{' '}
