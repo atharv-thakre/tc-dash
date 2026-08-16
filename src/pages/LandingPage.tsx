@@ -54,6 +54,7 @@ import { FloatingDock } from '../components/reactbits/FloatingDock';
 import { FeatureBentoHub } from '../components/reactbits/FeatureBentoHub';
 import { PlaygroundShowcase } from '../components/reactbits/PlaygroundShowcase';
 import { ComparisonMatrix } from '../components/reactbits/ComparisonMatrix';
+import { TcAuthLogo } from '../components/common/TcAuthLogo';
 
 interface LandingPageProps {
   onNavigate: (path: string) => void;
@@ -198,19 +199,11 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
       <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand Logo & Version */}
-          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => onNavigate('/')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/25 text-white">
-              <KeyRound className="w-5 h-5" />
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-lg font-black tracking-tight text-white flex items-center">
-                tc<span className="text-indigo-400">-</span>auth
-              </span>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-800/70 rounded-md whitespace-nowrap shadow-xs">
-                <DecryptedText text="v1.5.0" speed={40} maxIterations={8} animateOn="hover" />
-              </span>
-            </div>
-          </div>
+          <TcAuthLogo
+            size="md"
+            version="v1.5.0"
+            onClick={() => onNavigate('/')}
+          />
 
           {/* Center Navigation Links - Desktop */}
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-semibold text-zinc-400">
@@ -837,12 +830,7 @@ curl -X POST https://api.example.com/tc-auth/login/password \\
       <footer className="border-t border-zinc-800 bg-zinc-950 py-12 pb-24 text-xs text-zinc-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-              <KeyRound className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-white">
-              tc-auth <span className="font-mono text-indigo-400">v1.5.0</span>
-            </span>
+            <TcAuthLogo size="sm" version="v1.5.0" />
             <span>•</span>
             <span>Modular Authentication Framework for Python</span>
           </div>
