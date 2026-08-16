@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import { Badge } from '../common/Badge';
+import { SidebarAuthorCard } from './SidebarAuthorCard';
 import { LIBRARY_DOCS, API_DOCS } from '../../data/docsData';
 
 interface SidebarProps {
@@ -245,60 +246,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Bottom Card for Role Status & Author / Repo Links */}
+          {/* Interactive Role & Author Card */}
           <div className="mt-auto pt-2 space-y-3">
-            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate capitalize leading-normal">
-                    {account?.role || 'Guest'} Mode
-                  </span>
-                </div>
-                <Badge variant={isSuperAdmin ? 'purple' : 'neutral'} className="text-[10px] shrink-0">
-                  {isSuperAdmin ? 'SUPERADMIN' : 'USER'}
-                </Badge>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed mb-2.5">
-                {isSuperAdmin
-                  ? 'Full administrative privileges active. Access to system config & docs.'
-                  : 'Standard permissions. Access to Profile settings and SDK docs.'}
-              </p>
-
-              {/* Author & GitHub links */}
-              <div className="pt-2 border-t border-slate-200 dark:border-zinc-800/80 space-y-1.5 text-[10px]">
-                <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400">
-                  <span>Author</span>
-                  <a
-                    href="https://github.com/atharv-thakre"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  >
-                    Atharv Thakre
-                  </a>
-                </div>
-                <div className="flex items-center justify-between gap-2 pt-0.5">
-                  <a
-                    href="https://github.com/atharv-thakre/tc_auth"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono transition-colors"
-                  >
-                    tc_auth (Py) ↗
-                  </a>
-                  <span className="text-slate-300 dark:text-zinc-700">•</span>
-                  <a
-                    href="https://github.com/atharv-thakre/tc-dash"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-mono transition-colors"
-                  >
-                    tc-dash (UI) ↗
-                  </a>
-                </div>
-              </div>
-            </div>
+            <SidebarAuthorCard isSuperAdmin={isSuperAdmin} />
 
             {account && (
               <button
