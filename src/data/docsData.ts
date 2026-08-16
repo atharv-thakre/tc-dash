@@ -107,7 +107,7 @@ auth = Auth(engine=engine, app=app)
 # 4. Configure CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://app.totalchaos.online"],
+    allow_origins=["https://api.codesena.me", "https://codesena.me", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,7 +120,7 @@ auth.email.config(
     username="your-email@gmail.com",
     password="your-app-password",
     sender="your-email@gmail.com",
-    sender_name="Total Chaos",
+    sender_name="CodeSena Auth",
     use_tls=True
 )
 
@@ -128,13 +128,13 @@ auth.email.config(
 auth.google.config(
     client_id="YOUR_GOOGLE_CLIENT_ID",
     client_secret="YOUR_GOOGLE_CLIENT_SECRET",
-    redirect_uri="https://app.totalchaos.online/tc-auth/google/callback"
+    redirect_uri="https://api.codesena.me/tc-auth/google/callback"
 )
 
 auth.github.config(
     client_id="YOUR_GITHUB_CLIENT_ID",
     client_secret="YOUR_GITHUB_CLIENT_SECRET",
-    redirect_uri="https://app.totalchaos.online/tc-auth/github/callback"
+    redirect_uri="https://api.codesena.me/tc-auth/github/callback"
 )
 
 # 7. JWT Settings

@@ -1,12 +1,71 @@
 import axios from 'axios';
 
-const DEFAULT_BASE_URL = '/tc-auth';
+export const DEFAULT_BASE_URL = 'https://api.codesena.me/tc-auth';
 
 export const LOCAL_STORAGE_TOKEN_KEY = 'tc_auth_access_token';
 export const LOCAL_STORAGE_API_MODE_KEY = 'tc_auth_api_mode';
 export const LOCAL_STORAGE_CUSTOM_URL_KEY = 'tc_auth_custom_url';
+export const LOCAL_STORAGE_CUSTOM_PRESETS_KEY = 'tc_auth_custom_presets';
 
 export type ApiMode = 'demo' | 'live';
+
+export interface ServerPreset {
+  id: string;
+  name: string;
+  url: string;
+  isBuiltin?: boolean;
+}
+
+export const BUILTIN_PRESETS: ServerPreset[] = [
+  {
+    id: 'codesena-live',
+    name: 'CodeSena Live API (Default)',
+    url: 'https://api.codesena.me/tc-auth',
+    isBuiltin: true,
+  },
+  {
+    id: 'local-proxy',
+    name: 'Local Proxy (/tc-auth)',
+    url: '/tc-auth',
+    isBuiltin: true,
+  },
+];
+
+export function getCustomPresets(): ServerPreset[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_CUSTOM_PRESETS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter(
+        (p) => p && typeof p.url === 'string' && typeof p.name === 'string' && !p.url.includes('totalchaos.online')
+      );
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomPreset(name: string, url: string): ServerPreset {
+  const cleanedUrl = url.trim().replace(/\/+$/, '');
+  const presets = getCustomPresets();
+  const newPreset: ServerPreset = {
+    id: 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    name: name.trim() || cleanedUrl,
+    url: cleanedUrl,
+    isBuiltin: false,
+  };
+  const updated = [...presets, newPreset];
+  localStorage.setItem(LOCAL_STORAGE_CUSTOM_PRESETS_KEY, JSON.stringify(updated));
+  return newPreset;
+}
+
+export function deleteCustomPreset(id: string): void {
+  const presets = getCustomPresets();
+  const filtered = presets.filter((p) => p.id !== id);
+  localStorage.setItem(LOCAL_STORAGE_CUSTOM_PRESETS_KEY, JSON.stringify(filtered));
+}
 
 export function getStoredApiMode(): ApiMode {
   const stored = localStorage.getItem(LOCAL_STORAGE_API_MODE_KEY);
@@ -19,8 +78,11 @@ export function setStoredApiMode(mode: ApiMode) {
 }
 
 export function getCustomBaseUrl(): string {
-  const url = localStorage.getItem(LOCAL_STORAGE_CUSTOM_URL_KEY) || DEFAULT_BASE_URL;
-  if (!url || !url.trim()) return DEFAULT_BASE_URL;
+  const url = localStorage.getItem(LOCAL_STORAGE_CUSTOM_URL_KEY);
+  if (!url || !url.trim() || url.includes('totalchaos.online')) {
+    localStorage.setItem(LOCAL_STORAGE_CUSTOM_URL_KEY, DEFAULT_BASE_URL);
+    return DEFAULT_BASE_URL;
+  }
   const trimmed = url.trim();
   // Ensure no trailing slashes for clean concatenation with endpoint paths
   return trimmed.endsWith('/') && trimmed.length > 1 ? trimmed.replace(/\/+$/, '') : trimmed;

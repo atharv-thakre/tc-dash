@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'motion/react';
 import { KeyRound, FileCode2, BookOpen, Sparkles, LogIn, Server } from 'lucide-react';
 import { ApiConfigModal } from '../common/ApiConfigModal';
 
@@ -14,6 +14,7 @@ interface DockItemProps {
 
 const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge, active }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -24,29 +25,44 @@ const DockIcon: React.FC<DockItemProps> = ({ mouseX, title, icon, onClick, badge
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 180, damping: 14 });
 
   return (
-    <motion.div
-      ref={ref}
-      style={{ width, height: width }}
-      onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-2xl border transition-colors cursor-pointer ${
-        active
-          ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/30'
-          : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800'
-      }`}
-    >
-      {/* Tooltip */}
-      <div className="pointer-events-none absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-700 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50 hidden sm:block">
-        {title}
-      </div>
+    <div className="relative">
+      {/* Animated Floating Tooltip */}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.85, x: '-50%' }}
+            animate={{ opacity: 1, y: -4, scale: 1, x: '-50%' }}
+            exit={{ opacity: 0, y: 6, scale: 0.9, x: '-50%' }}
+            transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+            className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-zinc-950/95 border border-indigo-500/50 text-white text-[11px] font-semibold tracking-wide whitespace-nowrap shadow-xl shadow-black/80 backdrop-blur-md z-50 flex items-center gap-1.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            <span>{title}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {badge && (
-        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-zinc-950" />
-      )}
+      <motion.div
+        ref={ref}
+        style={{ width, height: width }}
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`relative flex items-center justify-center rounded-2xl border transition-colors cursor-pointer select-none ${
+          active
+            ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/30'
+            : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700'
+        }`}
+      >
+        {badge && (
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-zinc-950 shadow-sm" />
+        )}
 
-      <div className="w-5 h-5 flex items-center justify-center pointer-events-none">
-        {icon}
-      </div>
-    </motion.div>
+        <div className="w-5 h-5 flex items-center justify-center pointer-events-none">
+          {icon}
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
@@ -118,14 +134,14 @@ export const FloatingDock: React.FC<FloatingDockProps> = ({
 
   return (
     <>
-      <div className={`fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1rem)] px-2 ${className}`}>
+      <div className={`fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-1rem)] px-2 ${className}`}>
         <motion.div
           onMouseMove={(e) => mouseX.set(e.pageX)}
           onMouseLeave={() => mouseX.set(Infinity)}
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.4 }}
-          className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-xl shadow-2xl shadow-indigo-950/30 overflow-x-auto max-w-full"
+          className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-xl shadow-2xl shadow-indigo-950/30 overflow-visible max-w-full"
         >
           {dockItems.map((item, i) => (
             <DockIcon

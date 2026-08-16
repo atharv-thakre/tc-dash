@@ -6,15 +6,18 @@ import {
   Activity,
   AlertCircle,
   ArrowRight,
+  BookmarkPlus,
   Check,
   Globe,
   KeyRound,
   Lock,
   Mail,
+  Plus,
   Send,
   Server,
   Settings2,
   Sparkles,
+  Trash2,
   Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -39,7 +42,16 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ onNavigate }) => {
   const { loginPassword, loginOTP, loginOAuth, forgotPassword } = useAuth();
-  const { apiMode, setApiMode, baseUrl, setBaseUrl } = useApiConfig();
+  const {
+    apiMode,
+    setApiMode,
+    baseUrl,
+    setBaseUrl,
+    builtinPresets,
+    customPresets,
+    addPreset,
+    removePreset,
+  } = useApiConfig();
 
   const [tab, setTab] = useState<'password' | 'otp' | 'reset'>('password');
   const [otpEmail, setOtpEmail] = useState('');
@@ -61,6 +73,8 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
   // Server Endpoint Settings
   const [showServerSettings, setShowServerSettings] = useState(false);
   const [inputUrl, setInputUrl] = useState(baseUrl);
+  const [isAddingPreset, setIsAddingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
 
   const {
     register: registerPassword,
@@ -355,9 +369,20 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
               ) : (
                 /* Live Server Mode Base URL Settings */
                 <>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                    BACKEND BASE URL PATH
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      BACKEND BASE URL PATH
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingPreset(!isAddingPreset)}
+                      className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <BookmarkPlus className="w-3 h-3" />
+                      <span>{isAddingPreset ? 'Close' : '+ Save Preset'}</span>
+                    </button>
+                  </div>
+
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Globe className="absolute left-3 top-2.5 w-3.5 h-3.5 text-zinc-500" />
@@ -365,52 +390,129 @@ export const LoginPage: React.FC<{ onNavigate: (path: string) => void }> = ({ on
                         type="text"
                         value={inputUrl || ''}
                         onChange={(e) => setInputUrl(e.target.value)}
-                        placeholder="/tc-auth"
+                        placeholder="https://api.codesena.me/tc-auth or /tc-auth"
                         className="w-full pl-8 pr-2 py-1.5 text-xs bg-zinc-900 border border-zinc-700/80 rounded-xl text-zinc-100 font-mono focus:ring-2 focus:ring-indigo-500/50"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleSaveUrl}
-                      className="px-3.5 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors cursor-pointer shadow-sm"
+                      className="px-3.5 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
                     >
                       Set
                     </button>
                   </div>
 
+                  {/* Add Custom Preset Inline Form */}
+                  {isAddingPreset && (
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-indigo-500/30 space-y-2">
+                      <div className="text-[10px] font-semibold text-indigo-300 flex items-center gap-1">
+                        <Plus className="w-3 h-3" />
+                        <span>Save Current URL to Local Presets</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          value={newPresetName}
+                          onChange={(e) => setNewPresetName(e.target.value)}
+                          placeholder="Preset name (e.g. My Server)"
+                          className="flex-1 px-2 py-1 text-xs bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!inputUrl.trim()) {
+                              toast.error('Enter a URL first');
+                              return;
+                            }
+                            const name = newPresetName.trim() || inputUrl.trim();
+                            addPreset(name, inputUrl.trim());
+                            toast.success(`Saved preset "${name}" locally`);
+                            setIsAddingPreset(false);
+                            setNewPresetName('');
+                          }}
+                          className="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer shrink-0"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Quick Presets */}
-                  <div className="flex flex-wrap gap-1.5 items-center text-[10px] text-zinc-400 pt-0.5">
-                    <span className="text-zinc-500 font-medium">Presets:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInputUrl('/tc-auth');
-                        setBaseUrl('/tc-auth');
-                        toast.success('Set base URL to /tc-auth');
-                      }}
-                      className={`px-2 py-0.5 rounded font-mono text-xs border transition-all cursor-pointer ${
-                        baseUrl === '/tc-auth'
-                          ? 'bg-zinc-800 text-white border-zinc-600 font-bold'
-                          : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
-                      }`}
-                    >
-                      /tc-auth
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInputUrl('https://app.totalchaos.online/tc-auth');
-                        setBaseUrl('https://app.totalchaos.online/tc-auth');
-                        toast.success('Set base URL to https://app.totalchaos.online/tc-auth');
-                      }}
-                      className={`px-2 py-0.5 rounded font-mono text-xs border transition-all cursor-pointer ${
-                        baseUrl === 'https://app.totalchaos.online/tc-auth'
-                          ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold'
-                          : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-                      }`}
-                    >
-                      https://app.totalchaos.online/tc-auth
-                    </button>
+                  <div className="space-y-1.5 pt-0.5">
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                      <span className="text-zinc-500 font-medium">Presets:</span>
+                      <span className="text-[9px] text-zinc-600 font-mono">Stored Locally</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {/* Builtin Presets */}
+                      {builtinPresets.map((p) => {
+                        const isSelected = baseUrl === p.url;
+                        const isDefault = p.id === 'codesena-live';
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setInputUrl(p.url);
+                              setBaseUrl(p.url);
+                              toast.success(`Set base URL to ${p.url}`);
+                            }}
+                            className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 ${
+                              isSelected
+                                ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
+                                : isDefault
+                                ? 'bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-300 border-indigo-800/60 font-semibold'
+                                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
+                            }`}
+                          >
+                            <span>{p.url}</span>
+                            {isDefault && (
+                              <span className="px-1 py-0.2 rounded bg-indigo-500/30 text-indigo-300 text-[8px] uppercase font-bold tracking-wider">
+                                Default
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* Custom Presets */}
+                      {customPresets.map((p) => {
+                        const isSelected = baseUrl === p.url;
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setInputUrl(p.url);
+                              setBaseUrl(p.url);
+                              toast.success(`Set base URL to ${p.url}`);
+                            }}
+                            className={`px-2 py-1 rounded font-mono text-[11px] border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+                              isSelected
+                                ? 'bg-indigo-500/20 text-indigo-200 border-indigo-500/50 font-bold ring-1 ring-indigo-500/30'
+                                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
+                            }`}
+                          >
+                            <span className="text-zinc-400 font-sans font-medium text-[10px]">{p.name}:</span>
+                            <span className="truncate max-w-[130px]">{p.url}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removePreset(p.id);
+                                toast.success(`Removed preset "${p.name}"`);
+                              }}
+                              title="Delete preset"
+                              className="p-0.5 text-zinc-500 hover:text-rose-400 transition-colors"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               )}
